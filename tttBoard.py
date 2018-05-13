@@ -17,9 +17,9 @@ def TestBit(num, bitpos):
 # about a square. So bit 0 can represent square 0, bit 1 can represent square 1
 # and so on... Note bits can only be true or false... So here in this scenario
 # lets say bits will inform us that whether or not the square is empty or
-# occupied. We will need two integers here for each player ( player zero and
-# player cross ). Integer for player zero will let us know of what squares are
-# occupied by player 0 and likewise for player cross. Some assertions are
+# occupied. We will need two integers here for each player ( player_O and
+# player_X ). Integer for player_O will let us know of what squares are
+# occupied by player_O and likewise for player_X. Some assertions are
 # assumed here that same bit in both the integers can not be true at the same
 # time; as that would imply that same square is occupied by both players.
 # BOARD OPERATIONS
@@ -30,8 +30,8 @@ class tttBoard:
 
     # Initialize the board
     def __init__(self, boardSize):
-        self._zerosboard =  0           # bitboard for player zero
-        self._crosssboard = 0           # bitboard for player cross
+        self._Oboard =  0           # bitboard for player zero
+        self._Xboard = 0           # bitboard for player cross
         self._boardSize = boardSize     # size of board i.e. number of squares
         self._sideToMove = 0            # side to make move
 
@@ -42,9 +42,9 @@ class tttBoard:
         for boardSq in range(self._boardSize):
             if boardSq and boardSq % oneDBoardSize == 0:
                 boardString += "\n"
-            if TestBit(self._zerosboard, boardSq):
+            if TestBit(self._Oboard, boardSq):
                 boardString += "O "
-            elif TestBit(self._crosssboard, boardSq):
+            elif TestBit(self._Xboard, boardSq):
                 boardString += "X "
             else:
                 boardString += ". "
@@ -53,11 +53,26 @@ class tttBoard:
     # Generate all possible moves from current board state
     # A move is an integer with single bit on for the square
     # at which move is to be made
-    def generateMoves(self):
-        return None
+    def legalMoves(self):
+        legalmoves = []
+        if(self._sideToMove == 0):
+            board = self._Oboard
+        else:
+            board = self._Xboard
+            
+        for boardSq in range(self._boardSize):
+            if(not TestBit(board,boardSq)):
+                legalmoves.append(2^boardSq)
+        return legalmoves
 
     # Make the passed move on the board for the side whose
     # turn it is. After making the move update the side to
     # make next move
     def makeMove(self, move):
+        if(self._sideToMove == 0):
+            self._Oboard = self._Oboard | move
+            self._sideToMove = 1
+        else:
+            self._Xboard = self._Xboard | move
+            self._sideToMove = 0
         return None

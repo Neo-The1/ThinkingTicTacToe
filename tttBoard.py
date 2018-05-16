@@ -17,8 +17,8 @@ def testBit(num, bitpos):
 # about a square. So bit 0 can represent square 0, bit 1 can represent square 1
 # and so on... Note bits can only be true or false... So here in this scenario
 # lets say bits will inform us that whether or not the square is empty or
-# occupied. We will need two integers here for each player ( player zero and
-# player cross ). Integer for player zero will let us know of what squares are
+# occupied. We will need two integers here for each player ( player O and
+# player X). Integer for player zero will let us know of what squares are
 # occupied by player 0 and likewise for player cross. Some assertions are
 # assumed here that same bit in both the integers can not be true at the same
 # time; as that would imply that same square is occupied by both players.

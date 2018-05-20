@@ -33,7 +33,7 @@ class tttBoard:
         self._Oboard =  0               # bitboard for player zero
         self._Xboard = 0                # bitboard for player cross
         self._boardSize = boardSize     # size of board i.e. number of squares
-        self._sideToMove = 0            # side to make move, 0 for O 1 for X
+        self._sideToMove = 1            # side to make move, 1 for O 2 for X
 
     # Print the board
     def display(self):
@@ -65,12 +65,12 @@ class tttBoard:
     # turn it is. After making the move update the side to
     # make next move
     def makeMove(self, move):
-        if self._sideToMove == 0:
+        if self._sideToMove == 1:
             self._Oboard = self._Oboard | move
-            self._sideToMove = 1
+            self._sideToMove = 2
         else:
             self._Xboard = self._Xboard | move
-            self._sideToMove = 0            
+            self._sideToMove = 1            
     
     #Check the winner by checking all rows, all columns and then 2 diagonals
     # we will assume indexing of positons in board and corresponding in integer
@@ -80,16 +80,10 @@ class tttBoard:
     #2 3
     # player integer positions= 3 2 1 0
     
-    def checkWinner(self):
-        oneDBoardSize = int(math.sqrt(self._boardSize))
-        #check previous player's board depending upon whose turn is it
-        if self._sideToMove == 0:
-            evalBoard = self._Xboard 
-        else:
-            evalBoard = self._Oboard    
+    def checkWin(self,evalBoard):
+        oneDBoardSize = int(math.sqrt(self._boardSize))            
         #we set these values to be true and later and them with test bit for
         #locations we need to check. If unoccupied, they will turn False
-
         winDiag1 = True
         winDiag2 = True
         #check diagonals first
@@ -118,3 +112,16 @@ class tttBoard:
                 return True
         # if no win occured
         return False
+    
+    def winner(self):
+        winner = 0
+        if self.checkWin(self._Oboard):
+            winner = 1
+        elif self.checkWin(self._Xboard):
+            winner = 2
+        else:
+            if (len(self.legalMoves())==0):
+                winner = -1
+        return winner
+            
+            

@@ -3,15 +3,16 @@ from tttBoard import tttBoard
 
 board = tttBoard(9)
 board.display()
-while len(board.legalMoves()) > 0 and not(board.checkWinner()):
+while len(board.legalMoves()) > 0 and not(board.winner()):
     print(board.legalMoves())
     move = int(input("choose from above list of moves"))
     board.makeMove(move)
     board.display()
-if (board.checkWinner()):
-    if(board._sideToMove == 0): 
-        print("X wins!") #if win occured in O's turn, X won!
-    else:
+    
+if (board.winner()):
+    if(board.winner()==1): 
         print("O wins!")
-else:
-    print("It's a Draw!")
+    elif(board.winner()==2):
+        print("X wins!")
+    elif(board.winner()==-1):
+        print("It's a Draw!")

@@ -49,15 +49,17 @@ class tttBoard:
             else:
                 boardString += ". "
         print(boardString)
-
+    
+    #current board
+    def currBoard(self):
+        return self._Xboard | self._Oboard
     # Generate all possible moves from current board state
     # A move is an integer with single bit on for the square
     # at which move is to be made
     def legalMoves(self):
         legalmoves = []
-        currBoard = self._Oboard | self._Xboard
         for boardSq in range(self._boardSize):
-            if not testBit(currBoard, boardSq):
+            if not testBit(self.currBoard(), boardSq):
                 legalmoves.append(2**boardSq)
         return legalmoves
 
@@ -120,7 +122,7 @@ class tttBoard:
         elif self.checkWin(self._Xboard):
             winner = 2
         else:
-            if (len(self.legalMoves())==0):
+            if not self.legalMoves():
                 winner = -1
         return winner
             

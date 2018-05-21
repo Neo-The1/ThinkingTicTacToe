@@ -1,3 +1,4 @@
+from __future__ import division
 import datetime
 from random import choice
 class MonteCarlo:
@@ -25,12 +26,9 @@ class MonteCarlo:
     #playout a random game and update the statistics table
     def runSimulation(self):
         expandTree =True
-        visitedPositions = set()    
-        player = self._board.sideToMove
-        if player == 0:
-            playerBoard = self._board.Oboard
-        else :
-            playerBoard = self._board.Xboard
+        visitedStates = set()    
+        player = self._board._sideToMove
+        state = self._board.currBoard()
             
         for x in range(self._maxMoves):
             #play randomly
@@ -39,17 +37,26 @@ class MonteCarlo:
             self._board.makeMove(move)
 
             #if this is a new leaf, set statistics to 0
-            if expandTree and (player,playerBoard) not in self._plays:
+            if expandTree and (player,state) not in self._plays:
                 expandTree = False
-                self._plays[(player,playerBoard)] = 0
-                self._wins[(player,playerBoard)] = 0
+                self._plays[(player,state)] = 0
+                self._wins[(player,state)] = 0
             
             #add the current position to visited and set boards
-            visitedPositions.add((player,playerBoard))
+            visitedStates.add((player,state))
             player = self._board._sideToMove
-                
-            if self._board.checkWinner():
-                
+            state = self._board.currBoard()
+            winner = self._board.winner()
+            if winner:
                 break
+            
+        #update the win and play stats for the simulation
+        for player,state in visitedStates:
+            if (player,state) not in self._plays:
+                continue
+            self._plays[(player,state)] += 1
+            if player == winner:
+                self._wins[(player,state)] += 1
+                
         
         

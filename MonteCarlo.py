@@ -18,10 +18,38 @@ class MonteCarlo:
         
     #Call AI to calculate best move from current state and return it
     def getMove(self):
+        state = self._board.currBoard()
+        player = self._board._sideToMove
+        legalMoves = self._board.legalMoves()
+        # no need to run simulation if there are no real choices
+        #so return accordingly
+        if not legalMoves:
+            return
+        if (len(legalMoves)==1):
+            return legalMoves[0]
+        games = 0
         begin = datetime.datetime.utcnow() #gets current time
         #run the simulation till the specified time
         while datetime.datetime.utcnow() - begin < self._simTime:
             self.runSimulation
+            games+=1
+        
+        movesStates = [] #list of tuples of move and state resulting from move
+        for p in legalMoves:
+            self._board.makeMove(p)
+            movesStates.apped((p,self._board.currBoard()))
+            
+        # Display the number of calls of `run_simulation` and the
+        # time elapsed.
+        print (games, datetime.datetime.utcnow() - begin)
+        
+        #Pick move with highest win percentage
+        percentWins, move = max(
+                (self._wins.get((player,S),0)/
+                self._plays.get((player,S),1),
+                p)
+                for p,S in movesStates
+                )
         
     #playout a random game and update the statistics table
     def runSimulation(self):
@@ -57,6 +85,3 @@ class MonteCarlo:
             self._plays[(player,state)] += 1
             if player == winner:
                 self._wins[(player,state)] += 1
-                
-        
-        

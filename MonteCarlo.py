@@ -1,3 +1,4 @@
+from __future__ import division
 import datetime
 from random import choice
 class MonteCarlo:
@@ -17,20 +18,45 @@ class MonteCarlo:
         
     #Call AI to calculate best move from current state and return it
     def getMove(self):
+        state = self._board.currBoard()
+        player = self._board._sideToMove
+        legalMoves = self._board.legalMoves()
+        # no need to run simulation if there are no real choices
+        #so return accordingly
+        if not legalMoves:
+            return
+        if (len(legalMoves)==1):
+            return legalMoves[0]
+        games = 0
         begin = datetime.datetime.utcnow() #gets current time
         #run the simulation till the specified time
         while datetime.datetime.utcnow() - begin < self._simTime:
             self.runSimulation
+            games+=1
+        
+        movesStates = [] #list of tuples of move and state resulting from move
+        for p in legalMoves:
+            self._board.makeMove(p)
+            movesStates.apped((p,self._board.currBoard()))
+            
+        # Display the number of calls of `run_simulation` and the
+        # time elapsed.
+        print (games, datetime.datetime.utcnow() - begin)
+        
+        #Pick move with highest win percentage
+        percentWins, move = max(
+                (self._wins.get((player,S),0)/
+                self._plays.get((player,S),1),
+                p)
+                for p,S in movesStates
+                )
         
     #playout a random game and update the statistics table
     def runSimulation(self):
         expandTree =True
-        visitedPositions = set()    
-        player = self._board.sideToMove
-        if player == 0:
-            playerBoard = self._board.Oboard
-        else :
-            playerBoard = self._board.Xboard
+        visitedStates = set()    
+        player = self._board._sideToMove
+        state = self._board.currBoard()
             
         for x in range(self._maxMoves):
             #play randomly
@@ -39,17 +65,23 @@ class MonteCarlo:
             self._board.makeMove(move)
 
             #if this is a new leaf, set statistics to 0
-            if expandTree and (player,playerBoard) not in self._plays:
+            if expandTree and (player,state) not in self._plays:
                 expandTree = False
-                self._plays[(player,playerBoard)] = 0
-                self._wins[(player,playerBoard)] = 0
+                self._plays[(player,state)] = 0
+                self._wins[(player,state)] = 0
             
             #add the current position to visited and set boards
-            visitedPositions.add((player,playerBoard))
+            visitedStates.add((player,state))
             player = self._board._sideToMove
-                
-            if self._board.checkWinner():
-                
+            state = self._board.currBoard()
+            winner = self._board.winner()
+            if winner:
                 break
-        
-        
+            
+        #update the win and play stats for the simulation
+        for player,state in visitedStates:
+            if (player,state) not in self._plays:
+                continue
+            self._plays[(player,state)] += 1
+            if player == winner:
+                self._wins[(player,state)] += 1

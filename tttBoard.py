@@ -1,91 +1,79 @@
-# ------------------------------------------------------------------------------
-# import required modules
-# ------------------------------------------------------------------------------
-import math
-
-# ------------------------------------------------------------------------------
-# Tests if bitpos in num is on
-# ------------------------------------------------------------------------------
-def testBit(num, bitpos):
-    return ( num & ( 1 << bitpos ) )
-
-# ------------------------------------------------------------------------------
-# NOTES
-# Size of the board is n * n
-# An integer of size n*n will be sufficient to store some information about it.
-# Consider the binary representation of this integer. Each bit can store info
-# about a square. So bit 0 can represent square 0, bit 1 can represent square 1
-# and so on... Note bits can only be true or false... So here in this scenario
-# lets say bits will inform us that whether or not the square is empty or
-# occupied. We will need two integers here for each player ( player O and
-# player X). Integer for player zero will let us know of what squares are
-# occupied by player 0 and likewise for player cross. Some assertions are
-# assumed here that same bit in both the integers can not be true at the same
-# time; as that would imply that same square is occupied by both players.
-# BOARD OPERATIONS
-# To make a move for a player at square s we just need to turn the corresponding
-# bit in player's integer on. To undo a move made on a square we turn it off.
-# ------------------------------------------------------------------------------
+#tic tac toe board will be indexed in this convention:
+# left to right starting from 0. See example: 2x2 board 
+#0 1
+#2 3  
+#Player O is 1 and Player X is 2
+#history of moves is stored in a list as 'O2','X0' etc.
 class tttBoard:
 
-    # Initialize the board
-    def __init__(self, boardSize):
-        self._Oboard =  0               # bitboard for player zero
-        self._Xboard = 0                # bitboard for player cross
-        self._boardSize = boardSize     # size of board i.e. number of squares
-        self._sideToMove = 1            # side to make move, 1 for O 2 for X
+    # Initialize the board, needs n to create nxn board
+    def __init__(self, n):
+        #board is a size nxn list containing 0,1 or 2 depending upon whether 
+        #it is empty, O or X respectively
+        self._board = [0]*n*n
+        #history contains the list of all moves
+        self._history = []
+        self._boardSize = n*n
+        self._1Dsize = n
 
+    def currPlayer(self):
+        if len(self._history)==0:
+            #if fist move, currPlayer is 1 = O
+            return 1
+        if 'O' in self._history[-1] :
+            #if last move was made by O, current player is X
+            return 2 
+        else:
+            return 1
+        
     # Print the board
     def display(self):
         boardString = ""
-        oneDBoardSize = int(math.sqrt(self._boardSize))
-        for boardSq in range(self._boardSize):
-            if boardSq and boardSq % oneDBoardSize == 0:
+        for ii in range(self._boardSize):                
+            boardSq = self._board[ii]
+            if ii % self._1Dsize == 0:
                 boardString += "\n"
-            if testBit(self._Oboard, boardSq):
+            if boardSq == 1:
                 boardString += "O "
-            elif testBit(self._Xboard, boardSq):
+            elif boardSq == 2 :
                 boardString += "X "
             else:
                 boardString += ". "
         print(boardString)
+
     
-    #current board
-    def currBoard(self):
-        return self._Xboard | self._Oboard
     # Generate all possible moves from current board state
-    # A move is an integer with single bit on for the square
-    # at which move is to be made
+    # A move is an integer position for Boardsq at which move is to be made
     def legalMoves(self):
         legalmoves = []
-        for boardSq in range(self._boardSize):
-            if not testBit(self.currBoard(), boardSq):
-                legalmoves.append(2**boardSq)
+        for i in range(self._boardSize):
+            boardSq = self._board[i]
+            if boardSq == 0: #if position empty
+                legalmoves.append(i)
         return legalmoves
 
     # Make the passed move on the board for the side whose
     # turn it is. After making the move update the side to
     # make next move
     def makeMove(self, move):
-        if self._sideToMove == 1:
-            self._Oboard = self._Oboard | move
-            self._sideToMove = 2
+        self._board[move] = self.currPlayer()
+        if self.currPlayer() == 1:
+            self._history.append('O'+str(move))
         else:
-            self._Xboard = self._Xboard | move
-            self._sideToMove = 1            
+            self._history.append('X'+str(move))
     
     #Check the winner by checking all rows, all columns and then 2 diagonals
     # we will assume indexing of positons in board and corresponding in integer
-    #representation of each player as per following 2x2 example
-    #Board
-    #0 1
-    #2 3
-    # player integer positions= 3 2 1 0
+    #evalBoard is one player's board
+    #a n-bit integer with 0s at empty places and 1 at places occupied by player
     
     def checkWin(self,evalBoard):
-        oneDBoardSize = int(math.sqrt(self._boardSize))            
+        # function to check if a given bit in n-bit is 1 or not
+        def testBit(num, bitpos):
+            return ( num & ( 1 << bitpos ) )
         #we set these values to be true and later and them with test bit for
-        #locations we need to check. If unoccupied, they will turn False
+        #locations we need to check. If unoccupied, they will turn False        
+        oneDBoardSize = self._1Dsize
         winDiag1 = True
         winDiag2 = True
         #check diagonals first
@@ -115,11 +103,20 @@ class tttBoard:
         # if no win occured
         return False
     
+    #To check winner, we create a n bit integer for each player with 0s at 
+    #empty places and 1s at places player occupies
     def winner(self):
+        Oboard = 0
+        Xboard = 0
+        for ii in range(self._boardSize):
+            if self._board[ii] == 1:
+                Oboard += 2**ii
+            if self._board[ii] == 2:
+                Xboard += 2**ii
         winner = 0
-        if self.checkWin(self._Oboard):
+        if self.checkWin(Oboard):
             winner = 1
-        elif self.checkWin(self._Xboard):
+        elif self.checkWin(Xboard):
             winner = 2
         else:
             if not self.legalMoves():

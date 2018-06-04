@@ -1,7 +1,7 @@
 #manual play to see if board is peforming correctly
 from tttBoard import tttBoard
 
-board = tttBoard(9)
+board = tttBoard(3)
 board.display()
 while len(board.legalMoves()) > 0 and not(board.winner()):
     print(board.legalMoves())

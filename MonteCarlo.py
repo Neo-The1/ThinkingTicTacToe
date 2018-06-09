@@ -13,6 +13,7 @@ class MonteCarlo:
         self._wins = {}
         self._plays = {}
         self._C = kwargs.get('C',1.4)
+        self._maxDepth = 0
         
     #Call AI to calculate best move from current state and return it
     def getMove(self):
@@ -54,7 +55,7 @@ class MonteCarlo:
                 reverse = True
                 ):
                     print("{3}:{0:.2f}%({1}/{2})".format(*x))
-        print("Maximum Moves Searched: ",self._maxMoves)
+        print("Maximum Depth Searched: ",self._maxDepth)
         
         return move
     #playout a random game and update the statistics table
@@ -64,23 +65,27 @@ class MonteCarlo:
         plays,wins = self._plays,self._wins
         expandTree =True
         visitedStates = set()    
-        player = self._board._currPlayer()
+        player = self._board.currPlayer()
         statesCopy = self._states[:]
-        state = statesCopy[-1]
+        state = self._board._board
             
         for t in range(1,self._maxMoves+1):
             legalMoves = self._board.legalMoves()
             movesStates = [(p,self._board.makeMove(p)) for p in legalMoves]            
             #if stats exist for all legal moves
             #use the UCB formula
-           if all(plays.get((player,S)) for p,S in movesStates):
-               logN = log(sum(plays.get[(player,S)] for p,S in movesStates))
-               value, move, state = max(
+            if all(plays.get((player,S)) for p,S in movesStates):
+                N = sum(plays.get[(player,S)] for p,S in movesStates)                
+                if N==0:
+                    continue
+                
+                logN = log(N)
+                value, move, state = max(
                        ((wins[(player,S)]/plays[(player,S)])+
                         self._C*sqrt(logN/plays[(player,S)]),p,S)
                         for p,S in movesStates
                        )
-           else:
+            else:
                #play randomly
                move,state = choice(movesStates)
             
@@ -91,8 +96,8 @@ class MonteCarlo:
                 expandTree = False
                 self._plays[(player,state)] = 0
                 self._wins[(player,state)] = 0
-                if t>self._maxMoves:
-                    self._maxMoves = t
+                if t>self._maxDepth:
+                    self._maxDepth = t
             
             #add the current position to visited boards
             visitedStates.add((player,state))

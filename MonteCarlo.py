@@ -12,7 +12,7 @@ class MonteCarlo:
         self._maxMoves = kwargs.get('maxMoves',100)
         self._wins = {}
         self._plays = {}
-        self.C = kwargs.get('C',1.4)
+        self._C = kwargs.get('C',1.4)
         
     #Call AI to calculate best move from current state and return it
     def getMove(self):
@@ -72,10 +72,18 @@ class MonteCarlo:
             legalMoves = self._board.legalMoves()
             movesStates = [(p,self._board.makeMove(p)) for p in legalMoves]            
             #if stats exist for all legal moves
-            #use the UCT formula
-           
-            #play randomly
-            move,state = choice(movesStates)
+            #use the UCB formula
+           if all(plays.get((player,S)) for p,S in movesStates):
+               logN = log(sum(plays.get[(player,S)] for p,S in movesStates))
+               value, move, state = max(
+                       ((wins[(player,S)]/plays[(player,S)])+
+                        self._C*sqrt(logN/plays[(player,S)]),p,S)
+                        for p,S in movesStates
+                       )
+           else:
+               #play randomly
+               move,state = choice(movesStates)
+            
             statesCopy.append(state)
             
             #if this is a new leaf, set statistics to 0
@@ -83,6 +91,8 @@ class MonteCarlo:
                 expandTree = False
                 self._plays[(player,state)] = 0
                 self._wins[(player,state)] = 0
+                if t>self._maxMoves:
+                    self._maxMoves = t
             
             #add the current position to visited boards
             visitedStates.add((player,state))

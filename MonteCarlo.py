@@ -12,7 +12,7 @@ class MonteCarlo:
         self._maxMoves = kwargs.get('maxMoves',100)
         self._wins = {}
         self._plays = {}
-        self._C = kwargs.get('C',1.4)
+        self._C = kwargs.get('C',1)
         self._maxDepth = 0
         
     #Call AI to calculate best move from current state and return it
@@ -79,7 +79,6 @@ class MonteCarlo:
                 N = sum(plays.get[(player,S)] for p,S in movesStates)                
                 if N==0:
                     continue
-                
                 logN = log(N)
                 value, move, state = max(
                        ((wins[(player,S)]/plays[(player,S)])+
@@ -89,7 +88,6 @@ class MonteCarlo:
             else:
                #play randomly
                move,state = choice(movesStates)
-            
             statesCopy.append(state)
             
             #if this is a new leaf, set statistics to 0
@@ -99,7 +97,7 @@ class MonteCarlo:
                 self._wins[(player,state)] = 0
                 if t>self._maxDepth:
                     self._maxDepth = t
-            
+
             #add the current position to visited boards
             visitedStates.add((player,state))
             #set board and player

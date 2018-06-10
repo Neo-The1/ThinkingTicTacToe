@@ -32,7 +32,8 @@ class MonteCarlo:
             self.runSimulation()
             games+=1
         #list of tuples of move and state resulting from move
-        movesStates = [(p,self._board.makeMove(p)) for p in legalMoves]            
+        movesStates = [(p,self._board.makeMove(p)) for p in legalMoves]     
+        
         # Display the number of calls of `run_simulation` and the
         # time elapsed.
         print(games, (datetime.datetime.utcnow() - begin))

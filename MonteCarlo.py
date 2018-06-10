@@ -6,7 +6,6 @@ class MonteCarlo:
     #initialize
     def __init__(self,board,**kwargs):
         self._board = board
-        self._states = []
         seconds = kwargs.get('time',30)
         self._simTime = datetime.timedelta(seconds = seconds)
         self._maxMoves = kwargs.get('maxMoves',100)
@@ -66,7 +65,6 @@ class MonteCarlo:
         expandTree =True
         visitedStates = set()    
         player = self._board.currPlayer()
-        statesCopy = self._states[:]
         state = self._board._board
             
         for t in range(1,self._maxMoves+1):
@@ -88,9 +86,6 @@ class MonteCarlo:
             else:
                #play randomly
                move,state = choice(movesStates)
-            
-            statesCopy.append(state)
-            
             #if this is a new leaf, set statistics to 0
             if expandTree and (player,state) not in self._plays:
                 expandTree = False

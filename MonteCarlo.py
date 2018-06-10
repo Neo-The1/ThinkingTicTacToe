@@ -1,6 +1,7 @@
 from __future__ import division
 import datetime
 from random import choice
+from math import log, sqrt
 class MonteCarlo:
     #initialize
     def __init__(self,board,**kwargs):
@@ -11,15 +12,12 @@ class MonteCarlo:
         self._maxMoves = kwargs.get('maxMoves',100)
         self._wins = {}
         self._plays = {}
-    
-    #Append the passed game state to history
-    def update(self,state):
-        self._states.append(states)
+        self._C = kwargs.get('C',1.4)
+        self._maxDepth = 0
         
     #Call AI to calculate best move from current state and return it
     def getMove(self):
-        state = self._board.currBoard()
-        player = self._board._sideToMove
+        player = self._board.currPlayer()
         legalMoves = self._board.legalMoves()
         # no need to run simulation if there are no real choices
         #so return accordingly
@@ -31,17 +29,14 @@ class MonteCarlo:
         begin = datetime.datetime.utcnow() #gets current time
         #run the simulation till the specified time
         while datetime.datetime.utcnow() - begin < self._simTime:
-            self.runSimulation
+            self.runSimulation()
             games+=1
+        #list of tuples of move and state resulting from move
+        movesStates = [(p,self._board.makeMove(p)) for p in legalMoves]     
         
-        movesStates = [] #list of tuples of move and state resulting from move
-        for p in legalMoves:
-            self._board.makeMove(p)
-            movesStates.apped((p,self._board.currBoard()))
-            
         # Display the number of calls of `run_simulation` and the
         # time elapsed.
-        print (games, datetime.datetime.utcnow() - begin)
+        print(games, (datetime.datetime.utcnow() - begin))
         
         #Pick move with highest win percentage
         percentWins, move = max(
@@ -51,29 +46,65 @@ class MonteCarlo:
                 for p,S in movesStates
                 )
         
+        #display stats for each possible play
+        for x in sorted(
+                ((100*self._wins.get((player,S),0)/
+                self._plays.get((player,S),1),
+                self._wins.get((player,S),0),
+                self._plays.get((player,S),0),p)
+                for p,S in movesStates),
+                reverse = True
+                ):
+                    print("{3}:{0:.2f}%({1}/{2})".format(*x))
+        print("Maximum Depth Searched: ",self._maxDepth)
+        
+        return move
     #playout a random game and update the statistics table
     def runSimulation(self):
+        #copying some variables so taht we have variable lookup instead of
+        #attrivute call, to make code faster
+        plays,wins = self._plays,self._wins
         expandTree =True
         visitedStates = set()    
-        player = self._board._sideToMove
-        state = self._board.currBoard()
+        player = self._board.currPlayer()
+        statesCopy = self._states[:]
+        state = self._board._board
             
-        for x in range(self._maxMoves):
-            #play randomly
-            legalMoves = self._board.legalMoves(self._board)
-            move = choice(legalMoves)
-            self._board.makeMove(move)
-
+        for t in range(1,self._maxMoves+1):
+            legalMoves = self._board.legalMoves()
+            movesStates = [(p,self._board.makeMove(p)) for p in legalMoves]            
+            #if stats exist for all legal moves
+            #use the UCB formula
+            if all(plays.get((player,S)) for p,S in movesStates):
+                N = sum(plays.get[(player,S)] for p,S in movesStates)                
+                if N==0:
+                    continue
+                
+                logN = log(N)
+                value, move, state = max(
+                       ((wins[(player,S)]/plays[(player,S)])+
+                        self._C*sqrt(logN/plays[(player,S)]),p,S)
+                        for p,S in movesStates
+                       )
+            else:
+               #play randomly
+               move,state = choice(movesStates)
+            
+            statesCopy.append(state)
+            
             #if this is a new leaf, set statistics to 0
             if expandTree and (player,state) not in self._plays:
                 expandTree = False
                 self._plays[(player,state)] = 0
                 self._wins[(player,state)] = 0
+                if t>self._maxDepth:
+                    self._maxDepth = t
             
-            #add the current position to visited and set boards
+            #add the current position to visited boards
             visitedStates.add((player,state))
-            player = self._board._sideToMove
-            state = self._board.currBoard()
+            #set board and player
+            player = self._board.currPlayer()
+            state = self._board._board
             winner = self._board.winner()
             if winner:
                 break

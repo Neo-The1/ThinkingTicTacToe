@@ -61,7 +61,12 @@ class tttBoard:
             self._history.append('O'+str(move))
         else:
             self._history.append('X'+str(move))
-    
+
+    def getStateAfterMove(self, move):
+        boardcopy = self._board[:]
+        boardcopy[move] = self.currPlayer()
+        return "".join([str(p) for p in boardcopy])
+
     #Check the winner by checking all rows, all columns and then 2 diagonals
     # we will assume indexing of positons in board and corresponding in integer
     #evalBoard is one player's board

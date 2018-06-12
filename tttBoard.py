@@ -4,13 +4,15 @@
 #2 3  
 #Player O is 1 and Player X is 2
 #history of moves is stored in a list as 'O2','X0' etc.
+#the state will be a nxn string made by joining the list
 class tttBoard:
 
     # Initialize the board, needs n to create nxn board
     def __init__(self, n):
         #board is a size nxn list containing 0,1 or 2 depending upon whether 
         #it is empty, O or X respectively
-        self._board = [0]*n*n
+        self._board = [0]*n*n            
+        self._state = "".join([str(p) for p in self._board])
         #history contains the list of all moves
         self._history = []
         self._boardSize = n*n
@@ -61,6 +63,7 @@ class tttBoard:
             self._history.append('O'+str(move))
         else:
             self._history.append('X'+str(move))
+        return self._state
 
     def getStateAfterMove(self, move):
         boardcopy = self._board[:]

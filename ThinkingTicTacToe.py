@@ -1,9 +1,8 @@
 #code to play with AI
 from tttBoard import tttBoard
 from MonteCarlo import MonteCarlo
-pBoard = tttBoard(3)
-tttBoard = tttBoard(3)
-pBoard.display()
+board = tttBoard(3)
+board.display()
 def checkWin(board):
     if (board.winner()):
         if(board.winner()==1):
@@ -18,22 +17,23 @@ def checkWin(board):
     else:
         return 0
         
-while len(pBoard.legalMoves()) > 0 and not(checkWin(pBoard)):
-    print(pBoard.legalMoves())
+while len(board.legalMoves()) > 0 and not(checkWin(board)):
+    print(board.legalMoves())
     pMove = int(input("choose from above list of moves"))
-    pBoard.makeMove(pMove)
-    print('your move...')
-    pBoard.display()
-    if checkWin(pBoard):
+    board.makeMove(pMove)
+    print('your move was: ' + str(pMove))
+    board.display()
+    if checkWin(board):
         break
-    board_copy = list(pBoard._board)
-    tttBoard._board = board_copy
+    board_copy = list(board._board)
+    compBoard = tttBoard(3)
+    compBoard._board = board_copy
     print('Thinking...')
-    ttt = MonteCarlo(tttBoard)
+    ttt = MonteCarlo(compBoard)
     tttMove = ttt.getMove()
-    pBoard.makeMove(tttMove)
+    board.makeMove(tttMove)
     print('Thinking Tic Tac Toe move...')
-    pBoard.display()
-    if checkWin(pBoard):
+    board.display()
+    if checkWin(board):
         break
 

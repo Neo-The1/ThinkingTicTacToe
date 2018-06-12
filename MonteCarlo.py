@@ -16,9 +16,8 @@ class MonteCarlo:
         self._maxMoves = kwargs.get('maxMoves', 100)
         self._wins = {}
         self._plays = {}
-        self._C = kwargs.get('C', 1.4)
+        self._C = kwargs.get('C',1)
         self._maxDepth = 0
-
 
     # Call AI to calculate best move from current state and return it
     def getMove(self):
@@ -85,7 +84,6 @@ class MonteCarlo:
                 N = sum(plays.get[(player,S)] for p,S in movesStates)
                 if N==0:
                     continue
-
                 logN = log(N)
                 value, move, state = max( ( (wins[(player,S)] / plays[(player,S)]) + self._C*sqrt(logN/plays[(player,S)]), p, S) for p, S in movesStates)
             else:

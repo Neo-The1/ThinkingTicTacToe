@@ -23,6 +23,10 @@ class MonteCarlo:
     def getMove(self):
         player = self._board.currPlayer()
         legalMoves = self._board.legalMoves()
+        print(player)
+        print(legalMoves)
+        print(self._board._board)
+        print(self._board._history)
         # no need to run simulation if there are no real choices
         #so return accordingly
         if not legalMoves:

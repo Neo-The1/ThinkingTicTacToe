@@ -16,6 +16,7 @@ class MonteCarlo:
         self._maxMoves = kwargs.get('maxMoves', 100)
         self._wins = {}
         self._plays = {}
+        self._losses = {}
         self._C = kwargs.get('C',1.4)
         self._maxDepth = 0
 
@@ -42,17 +43,41 @@ class MonteCarlo:
         # time elapsed.
         print(games, (datetime.datetime.utcnow() - begin))
         #Pick move with highest win percentage
-        percentWins, move = max( (self._wins.get((player,S),0)/self._plays.get((player,S),1), p) for p,S in movesStates )
-        
-        #display stats for each possible play
-        for x in sorted(((100*self._wins.get((player,S),0)/
-                self._plays.get((player,S),1),
-                self._wins.get((player,S),0),
-                self._plays.get((player,S),0),p)
-                for p,S in movesStates),
+        percentWins, move = max( (self._wins.get((player,S),0)/
+                                  self._plays.get((player,S),1), p) 
+                                for p,S in movesStates )
+        #if losing in any position, pick move with minimum loss percentage
+        if max( self._wins.get((player,S),0)/
+                                  self._plays.get((player,S),1) 
+                                for p,S in movesStates ) < 0.5:
+            percentLoss, move = min( (self._losses.get((player,S),0)/
+                                  self._plays.get((player,S),1), p) 
+                                for p,S in movesStates )
+            print("Well Played Hooman! But I'm invincible!")
+            #print stats for losing 
+            #display stats for each possible play
+            print("Loss stats")
+            for x in sorted(((100*self._losses.get((player,S),0)/
+                              self._plays.get((player,S),1),
+                              self._losses.get((player,S),0),
+                              self._plays.get((player,S),0),p)
+                                for p,S in movesStates),
+                ) :
+                    print("{3}:{0:.2f}%({1}/{2})".format(*x))
+            print("Maximum Depth Searched: ",self._maxDepth)
+        else:
+            #print winning stats
+            #display stats for each possible play
+            for x in sorted(((100*self._wins.get((player,S),0)/
+                              self._plays.get((player,S),1),
+                              self._wins.get((player,S),0),
+                              self._plays.get((player,S),0),p)
+                                for p,S in movesStates),
                 reverse = True) :
                     print("{3}:{0:.2f}%({1}/{2})".format(*x))
-        print("Maximum Depth Searched: ",self._maxDepth)
+            print("Maximum Depth Searched: ",self._maxDepth)
+            
+        
         
         return move
     #playout a random game and update the statistics table
@@ -96,6 +121,7 @@ class MonteCarlo:
                 expandTree = False
                 self._plays[(player, state)] = 0
                 self._wins[(player, state)]  = 0
+                self._losses[(player, state)]  = 0
                 if t > self._maxDepth:
                     self._maxDepth = t
 
@@ -114,5 +140,8 @@ class MonteCarlo:
             if (player, state) not in self._plays:
                 continue
             self._plays[(player,state)] += 1
-            if player == winner:
+            if winner==2:
                 self._wins[(player,state)] += 1
+            elif winner == 1:
+                self._losses[(player,state)]+=1
+                

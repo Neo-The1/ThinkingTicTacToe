@@ -21,6 +21,7 @@ while len(board.legalMoves()) > 0 and not(checkWin(board)):
     print(board.legalMoves())
     pMove = int(input("choose from above list of moves"))
     board.makeMove(pMove)
+<<<<<<< HEAD
     board.display()
     if checkWin(board):
         break
@@ -29,9 +30,22 @@ while len(board.legalMoves()) > 0 and not(checkWin(board)):
     compBoard._board = board_copy
     print('Thinking...')
     ttt = MonteCarlo(compBoard)
+=======
+    print('your move was: ' + str(pMove))
+    board.display()
+    if checkWin(board):
+        break
+    print('Thinking...')
+    ttt = MonteCarlo(board)
+>>>>>>> origin
     tttMove = ttt.getMove()
     board.makeMove(tttMove)
     print('Thinking Tic Tac Toe move...')
     board.display()
     if checkWin(board):
+<<<<<<< HEAD
         break
+=======
+        break
+
+>>>>>>> origin

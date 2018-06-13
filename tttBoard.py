@@ -64,7 +64,16 @@ class tttBoard:
         else:
             self._history.append('X'+str(move))
         return self._state
+<<<<<<< HEAD
     
+=======
+
+    def getStateAfterMove(self, move):
+        boardcopy = self._board[:]
+        boardcopy[move] = self.currPlayer()
+        return "".join([str(p) for p in boardcopy])
+
+>>>>>>> origin
     #Check the winner by checking all rows, all columns and then 2 diagonals
     # we will assume indexing of positons in board and corresponding in integer
     #evalBoard is one player's board
@@ -124,4 +133,10 @@ class tttBoard:
         else:
             if not self.legalMoves():
                 winner = -1
+<<<<<<< HEAD
         return winner
+=======
+        return winner
+            
+            
+>>>>>>> origin

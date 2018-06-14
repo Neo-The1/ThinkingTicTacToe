@@ -17,8 +17,12 @@ class MonteCarlo:
         self._wins = {}
         self._plays = {}
         self._losses = {}
+        self._draws = {}
         self._C = kwargs.get('C',1.4)
         self._maxDepth = 0
+        self._playerHuman = 1
+        self._playerComp = 2
+        self._flagDraw = -1
 
     # Call AI to calculate best move from current state and return it
 
@@ -42,42 +46,41 @@ class MonteCarlo:
         # Display the number of calls of `run_simulation` and the
         # time elapsed.
         print(games, (datetime.datetime.utcnow() - begin))
-        #Pick move with highest win percentage
+        #Pick move with highest draw percentage! 
+        #Good strategy for 3x3 tictactoe
         percentWins, move = max( (self._wins.get((player,S),0)/
                                   self._plays.get((player,S),1), p) 
                                 for p,S in movesStates )
-        #if losing in any position, pick move with minimum loss percentage
-        if max( self._wins.get((player,S),0)/
-                                  self._plays.get((player,S),1) 
-                                for p,S in movesStates ) < 0.5:
-            percentLoss, move = min( (self._losses.get((player,S),0)/
-                                  self._plays.get((player,S),1), p) 
-                                for p,S in movesStates )
-            print("Well Played Hooman! But I'm invincible!")
-            #print stats for losing 
-            #display stats for each possible play
-            print("Loss stats")
-            for x in sorted(((100*self._losses.get((player,S),0)/
-                              self._plays.get((player,S),1),
-                              self._losses.get((player,S),0),
-                              self._plays.get((player,S),0),p)
-                                for p,S in movesStates),
-                ) :
-                    print("{3}:{0:.2f}%({1}/{2})".format(*x))
-            print("Maximum Depth Searched: ",self._maxDepth)
-        else:
-            #print winning stats
-            #display stats for each possible play
-            for x in sorted(((100*self._wins.get((player,S),0)/
-                              self._plays.get((player,S),1),
-                              self._wins.get((player,S),0),
-                              self._plays.get((player,S),0),p)
-                                for p,S in movesStates),
-                reverse = True) :
-                    print("{3}:{0:.2f}%({1}/{2})".format(*x))
-            print("Maximum Depth Searched: ",self._maxDepth)
-            
+        #print stats for winning
+        print("Win stats")
+        for x in sorted(((100*self._wins.get((player,S),0)/
+                          self._plays.get((player,S),1),
+                          self._wins.get((player,S),0),
+                          self._plays.get((player,S),0),p)
+                            for p,S in movesStates),
+                            reverse=True) :
+            print("{3}:{0:.2f}%({1}/{2})".format(*x))
         
+        #print stats for losing
+        print("Loss stats")
+        for x in sorted(((100*self._losses.get((player,S),0)/
+                          self._plays.get((player,S),1),
+                          self._losses.get((player,S),0),
+                          self._plays.get((player,S),0),p)
+                            for p,S in movesStates),
+                            reverse = True) :
+            print("{3}:{0:.2f}%({1}/{2})".format(*x))
+        print("Maximum Depth Searched: ",self._maxDepth)
+        
+        #print stats for draw 
+        print("Draw stats")
+        for x in sorted(((100*self._draws.get((player,S),0)/
+                          self._plays.get((player,S),1),
+                          self._draws.get((player,S),0),
+                          self._plays.get((player,S),0),p)
+                            for p,S in movesStates),
+                            reverse = True) :
+            print("{3}:{0:.2f}%({1}/{2})".format(*x))
         
         return move
     #playout a random game and update the statistics table
@@ -104,10 +107,8 @@ class MonteCarlo:
                 break
             #if stats exist for all legal moves
             #use the UCB formula
-            if False : #all(plays.get((player, S)) for p, S in movesStates):
-                N = sum(plays.get[(player,S)] for p,S in movesStates)
-                if N==0:
-                    continue
+            if all(plays.get((player, S)) for p, S in movesStates):
+                N = sum(plays.get((player,S)) for p,S in movesStates)
                 logN = log(N)
                 value, move, state = max( ( (wins[(player,S)] / plays[(player,S)]) + self._C*sqrt(logN/plays[(player,S)]), p, S) for p, S in movesStates)
             else:
@@ -122,6 +123,7 @@ class MonteCarlo:
                 self._plays[(player, state)] = 0
                 self._wins[(player, state)]  = 0
                 self._losses[(player, state)]  = 0
+                self._draws[(player,state)] = 0
                 if t > self._maxDepth:
                     self._maxDepth = t
 
@@ -140,8 +142,11 @@ class MonteCarlo:
             if (player, state) not in self._plays:
                 continue
             self._plays[(player,state)] += 1
-            if winner==2:
+            if winner==self._playerComp:
                 self._wins[(player,state)] += 1
-            elif winner == 1:
+            elif winner == self._playerHuman:
                 self._losses[(player,state)]+=1
+            elif winner == self._flagDraw:
+                self._draws[(player,state)]+=1
+                
                 

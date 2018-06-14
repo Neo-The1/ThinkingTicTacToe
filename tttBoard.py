@@ -130,5 +130,3 @@ class tttBoard:
             if not self.legalMoves():
                 winner = -1
         return winner
-            
-            

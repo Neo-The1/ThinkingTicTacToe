@@ -4,9 +4,9 @@ from __future__ import division
 import datetime, copy
 from random import choice
 from math import log, sqrt
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-# ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
 class MonteCarlo:
     def __init__(self, board, **kwargs):
         self._board = board
@@ -16,17 +16,19 @@ class MonteCarlo:
         self._maxMoves = kwargs.get('maxMoves', 100)
         self._wins = {}
         self._plays = {}
-        self._C = kwargs.get('C',1)
+        self._losses = {}
+        self._draws = {}
+        self._C = kwargs.get('C',1.4)
         self._maxDepth = 0
+        self._playerHuman = 1
+        self._playerComp = 2
+        self._flagDraw = -1
 
     # Call AI to calculate best move from current state and return it
+
     def getMove(self):
         player = self._board.currPlayer()
         legalMoves = self._board.legalMoves()
-        print(player)
-        print(legalMoves)
-        print(self._board._board)
-        print(self._board._history)
         # no need to run simulation if there are no real choices
         #so return accordingly
         if not legalMoves:
@@ -40,28 +42,49 @@ class MonteCarlo:
             self.runSimulation()
             games+=1
         #list of tuples of move and state resulting from move
-        movesStates = [(p,self._board.getStateAfterMove(p)) for p in legalMoves]     
-
+        movesStates = [(p,self._board.getStateAfterMove(p)) for p in legalMoves]             
         # Display the number of calls of `run_simulation` and the
         # time elapsed.
         print(games, (datetime.datetime.utcnow() - begin))
-
-        #Pick move with highest win percentage
-        percentWins, move = max( (self._wins.get((player,S),0)/self._plays.get((player,S),1), p) for p,S in movesStates )
-
-        #display stats for each possible play
-        for x in sorted(
-                ((100*self._wins.get((player,S),0)/
-                self._plays.get((player,S),1),
-                self._wins.get((player,S),0),
-                self._plays.get((player,S),0),p)
-                for p,S in movesStates),
-                reverse = True
-                ):
-                    print("{3}:{0:.2f}%({1}/{2})".format(*x))
+        #Pick move with highest draw percentage! 
+        #Good strategy for 3x3 tictactoe
+        percentWins, move = max( (self._wins.get((player,S),0)/
+                                  self._plays.get((player,S),1), p) 
+                                for p,S in movesStates )
+        #print stats for winning
+        print("Win stats")
+        for x in sorted(((100*self._wins.get((player,S),0)/
+                          self._plays.get((player,S),1),
+                          self._wins.get((player,S),0),
+                          self._plays.get((player,S),0),p)
+                            for p,S in movesStates),
+                            reverse=True) :
+            print("{3}:{0:.2f}%({1}/{2})".format(*x))
+        
+        #print stats for losing
+        print("Loss stats")
+        for x in sorted(((100*self._losses.get((player,S),0)/
+                          self._plays.get((player,S),1),
+                          self._losses.get((player,S),0),
+                          self._plays.get((player,S),0),p)
+                            for p,S in movesStates),
+                            reverse = True) :
+            print("{3}:{0:.2f}%({1}/{2})".format(*x))
         print("Maximum Depth Searched: ",self._maxDepth)
-
+        
+        #print stats for draw 
+        print("Draw stats")
+        for x in sorted(((100*self._draws.get((player,S),0)/
+                          self._plays.get((player,S),1),
+                          self._draws.get((player,S),0),
+                          self._plays.get((player,S),0),p)
+                            for p,S in movesStates),
+                            reverse = True) :
+            print("{3}:{0:.2f}%({1}/{2})".format(*x))
+        
         return move
+    #playout a random game and update the statistics table
+
 
     # Playout a random game and update the statistics table
     def runSimulation(self):
@@ -84,10 +107,8 @@ class MonteCarlo:
                 break
             #if stats exist for all legal moves
             #use the UCB formula
-            if False : #all(plays.get((player, S)) for p, S in movesStates):
-                N = sum(plays.get[(player,S)] for p,S in movesStates)
-                if N==0:
-                    continue
+            if all(plays.get((player, S)) for p, S in movesStates):
+                N = sum(plays.get((player,S)) for p,S in movesStates)
                 logN = log(N)
                 value, move, state = max( ( (wins[(player,S)] / plays[(player,S)]) + self._C*sqrt(logN/plays[(player,S)]), p, S) for p, S in movesStates)
             else:
@@ -101,6 +122,8 @@ class MonteCarlo:
                 expandTree = False
                 self._plays[(player, state)] = 0
                 self._wins[(player, state)]  = 0
+                self._losses[(player, state)]  = 0
+                self._draws[(player,state)] = 0
                 if t > self._maxDepth:
                     self._maxDepth = t
 
@@ -110,6 +133,7 @@ class MonteCarlo:
             simulationBoard.makeMove(move)
             player = simulationBoard.currPlayer()
             winner = simulationBoard.winner()
+
             if winner:
                 break
 
@@ -118,5 +142,11 @@ class MonteCarlo:
             if (player, state) not in self._plays:
                 continue
             self._plays[(player,state)] += 1
-            if player == winner:
+            if winner==self._playerComp:
                 self._wins[(player,state)] += 1
+            elif winner == self._playerHuman:
+                self._losses[(player,state)]+=1
+            elif winner == self._flagDraw:
+                self._draws[(player,state)]+=1
+                
+                

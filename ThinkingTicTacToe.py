@@ -21,7 +21,6 @@ while len(board.legalMoves()) > 0 and not(checkWin(board)):
     print(board.legalMoves())
     pMove = int(input("choose from above list of moves"))
     board.makeMove(pMove)
-    print('your move was: ' + str(pMove))
     board.display()
     if checkWin(board):
         break
@@ -33,4 +32,3 @@ while len(board.legalMoves()) > 0 and not(checkWin(board)):
     board.display()
     if checkWin(board):
         break
-

@@ -18,13 +18,19 @@ x = tf.placeholder(tf.float32,[None,784])
 y = tf.placeholder(tf.float32,[None,10])
 
 #initialize wrights and biases: random initialization
-# we will use only 1 layer (output layer = hidden layer)
-W1 = tf.Variable(tf.random_normal([784,10],stddev = 0.03), name='W1')
-b1 = tf.Variable(tf.random_normal([10],stddev = 0.03), name='b1')
+# we will use 2 layers
+#Layer-1 : Hidden layer with 300 outputs
+W1 = tf.Variable(tf.random_normal([784,300],stddev = 0.03), name='W1')
+b1 = tf.Variable(tf.random_normal([300]), name='b1')
+#Layer-2 : Output layer
+W2 = tf.Variable(tf.random_normal([300,10],stddev = 0.03), name='W2')
+b2 = tf.Variable(tf.random_normal([10]), name='b2')
 
-#calculate the output
-out = tf.add(tf.matmul(x,W1),b1)
-out = tf.nn.relu(out)
+#calculate the output of hidden layer, using relu activation
+hidden_out = tf.nn.relu(tf.add(tf.matmul(x,W1),b1))
+
+#calculate output of output layer with softmax activation
+out = tf.nn.softmax(tf.add(tf.matmul(hidden_out,W2),b2))
 
 #calculate the cross entropy cost
 #avoid 0 as log input by clipping

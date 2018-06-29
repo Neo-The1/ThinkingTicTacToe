@@ -187,6 +187,7 @@ class tttGui:
 
     def show(self):
         self._mainWindow.show()
+        sys.exit(self._app.exec_())
 
 gui = tttGui()
 gui.show()

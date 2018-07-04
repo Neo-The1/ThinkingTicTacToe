@@ -1,61 +1,81 @@
-#creating a test nn usng tensorflow
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+import numpy as np
 import tensorflow as tf
-#importing tensorflow example for handwritten digit recognition
+
+# TODO: to be removed from this file. This is being kept here just to test
+# the dnNetwork implementation
 from tensorflow.examples.tutorials.mnist import input_data
+mnist = input_data.read_data_sets('MNIST_data')
 
-#read data
-mnist = input_data.read_data_sets("MNIST_data/",one_hot=True)
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+def input(dataset):
+    return dataset.images, dataset.labels.astype(np.int32)
 
-#set hyper-parameters
-learning_rate = 0.5
-epochs = 10
-batch_size = 100
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+class dnNetwork():
 
-#define placeholders for input and output
-#input is 28x28 images for mnist. 28x28 = 764
-x = tf.placeholder(tf.float32,[None,784])
-#output is digits- 0 to 9
-y = tf.placeholder(tf.float32,[None,10])
+    """ class representing a deep neural network with multiple hidden layers
+    """
+    def __init__(self, *args, **kwds):
+        """ a list of dnn layer size's including input and output layer.
+            first item in the list refers to the size of input layer.
+            last item in the list refers to the size of output layer.
+        """
+        self._layerSizes = kwds.get('layers', [])
+        self._optimizer = kwds.get('optimizer', tf.train.AdamOptimizer(1e-4))
+        assert len(self._layerSizes) > 2
+        # placeholder for input features
+        self._featureColumns = [tf.feature_column.numeric_column('x', shape=[28, 28])]
+        """ now initialize the underlying estimator
+        """
+        self._network = tf.estimator.DNNClassifier( feature_columns = self._featureColumns,
+                                                    hidden_units = [layerSize for layerSize in self._layerSizes[1:-1]],
+                                                    optimizer = self._optimizer,
+                                                    n_classes = 10,
+                                                    dropout = 0.1,
+                                                    model_dir = './tmp/mnist_model' )
 
-#initialize wrights and biases: random initialization
-# we will use only 1 layer (output layer = hidden layer)
-W1 = tf.Variable(tf.random_normal([784,10],stddev = 0.03), name='W1')
-b1 = tf.Variable(tf.random_normal([10],stddev = 0.03), name='b1')
+        self._trainInputFn = tf.estimator.inputs.numpy_input_fn( x = {"x": input(mnist.train)[0]},
+                                                                 y = input(mnist.train)[1],
+                                                                 num_epochs = None,
+                                                                 batch_size = 50,
+                                                                 shuffle = True )
 
-#calculate the output
-out = tf.add(tf.matmul(x,W1),b1)
-out = tf.nn.relu(out)
+        self._testInputFn = tf.estimator.inputs.numpy_input_fn( x = {"x": input(mnist.test)[0]},
+                                                                y = input(mnist.test)[1],
+                                                                num_epochs = 1,
+                                                                shuffle = False )
 
-#calculate the cross entropy cost
-#avoid 0 as log input by clipping
-y_clipped = tf.clip_by_value(out,1e-10,0.9999999)
-cross_entropy = -tf.reduce_mean( tf.reduce_sum(y*tf.log(y_clipped)
-                +(1-y)*tf.log(1-y_clipped),axis=1) )
 
-#add an optimizer
-optimizer = tf.train.GradientDescentOptimizer(learning_rate = learning_rate).minimize(cross_entropy)
 
-#setup the initialization operator
-init_op = tf.global_variables_initializer()
+    def loadFromFile(self, filename):
+        """ Load the network parameters from a file
+        """
+        return None
 
-#define accurace
-#get True or False based on output and y
-correct_prediction = tf.equal(tf.argmax(y,1),tf.argmax(out,1))
-#convert correct prediction to float and take a mean
-accuracy = tf.reduce_mean(tf.cast(correct_prediction,tf.float32))
+    def saveToFile(self, fileName):
+        """ Save the network parameters to a file
+        """
+        return None
 
-#Train
-#setup the session
-with tf.Session() as sess:
-    sess.run(init_op)
-    total_batch = int(len(mnist.train.labels)/batch_size)
-    for epoch in range(epochs):
-        avg_cost = 0
-        for i in range(total_batch):
-            batch_x, batch_y = mnist.train.next_batch(batch_size = batch_size)
-            _,c = sess.run([optimizer,cross_entropy],
-                           feed_dict = {x:batch_x,y:batch_y})
-            avg_cost +=c /total_batch
-        print("Epoch:",(epoch+1)," Cost:","{:.3f}".format(avg_cost))
-    print(sess.run(accuracy,feed_dict = {x:mnist.test.images, y:mnist.test.labels}))
+    def train(self, trainingData):
+        """ Train the network using passed training data
+        """
+        self._network.train( input_fn = self._trainInputFn, steps = 2000 )
+
+    def evaluate(self):
+        """ evaluate accuracy
+        """
+        accuracy_score = self._network.evaluate(input_fn=self._testInputFn)["accuracy"]
+        print("\nTest Accuracy: {0:f}%\n".format(accuracy_score*100))
+
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+if __name__ == "__main__":
+    testNetwork = dnNetwork(layers = [784, 256, 10])
+    testNetwork.train(None)
+    testNetwork.evaluate()
 

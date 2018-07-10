@@ -115,14 +115,14 @@ class monteCarlo:
             if winner:
                 break
 
+        loser = simulationBoard.opponent(winner)
+
         # Update the win and play stats for the simulation
         for player, state in visitedStates:
             if (player, state) not in self._plays:
                 continue
             self._plays[(player,state)] += 1
-#            if player == winner:
-#                self._wins[(player,state)] += 1
             if player == winner:
                 self._wins[(player,state)] += 1
-            elif simulationBoard.otherPlayer() == winner:
+            elif player == loser:
                 self._losses[(player,state)] += 1

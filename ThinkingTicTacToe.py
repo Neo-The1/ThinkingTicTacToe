@@ -1,6 +1,6 @@
 #code to play with AI
 from tttBoard import tttBoard
-from MonteCarlo import MonteCarlo
+from monteCarlo import monteCarlo
 board = tttBoard(3)
 board.display()
 def checkWin(board):
@@ -16,7 +16,7 @@ def checkWin(board):
             return 1
     else:
         return 0
-        
+
 while len(board.legalMoves()) > 0 and not(checkWin(board)):
     print(board.legalMoves())
     pMove = int(input("choose from above list of moves"))
@@ -25,10 +25,10 @@ while len(board.legalMoves()) > 0 and not(checkWin(board)):
     if checkWin(board):
         break
     print('Thinking...')
-    ttt = MonteCarlo(board)
+    ttt = monteCarlo(board)
     tttMove = ttt.getMove()
     board.makeMove(tttMove)
-    print('Thinking Tic Tac Toe move...')
+    print('Thinking Tic Tac Toe move...'+str(tttMove))
     board.display()
     if checkWin(board):
         break

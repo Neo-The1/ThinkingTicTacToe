@@ -4,97 +4,78 @@ from __future__ import division
 import datetime, copy
 from random import choice
 from math import log, sqrt
-# ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
 
-class MonteCarlo:
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+class monteCarlo:
     def __init__(self, board, **kwargs):
         self._board = board
-        self._states = []
         seconds = kwargs.get('time', 1)
         self._simTime = datetime.timedelta(seconds = seconds)
         self._maxMoves = kwargs.get('maxMoves', 100)
         self._wins = {}
         self._plays = {}
         self._losses = {}
-        self._draws = {}
         self._C = kwargs.get('C',1.4)
         self._maxDepth = 0
-        self._playerHuman = 1
-        self._playerComp = 2
-        self._flagDraw = -1
-
-    # Call AI to calculate best move from current state and return it
-
-    def getMove(self):
-        player = self._board.currPlayer()
-        legalMoves = self._board.legalMoves()
-        # no need to run simulation if there are no real choices
-        #so return accordingly
-        if not legalMoves:
-            return
-        if (len(legalMoves)==1):
-            return legalMoves[0]
-        games = 0
-        begin = datetime.datetime.utcnow() #gets current time
-        #run the simulation till the specified time
-        while datetime.datetime.utcnow() - begin < self._simTime:
-            self.runSimulation()
-            games+=1
-        #list of tuples of move and state resulting from move
-        movesStates = [(p,self._board.getStateAfterMove(p)) for p in legalMoves]             
-        # Display the number of calls of `run_simulation` and the
-        # time elapsed.
-        print(games, (datetime.datetime.utcnow() - begin))
-        #Pick move with highest draw percentage! 
-        #Good strategy for 3x3 tictactoe
-        percentWins, move = max( (self._wins.get((player,S),0)/
-                                  self._plays.get((player,S),1), p) 
-                                for p,S in movesStates )
-        #print stats for winning
-        print("Win stats")
-        for x in sorted(((100*self._wins.get((player,S),0)/
-                          self._plays.get((player,S),1),
-                          self._wins.get((player,S),0),
-                          self._plays.get((player,S),0),p)
+        
+    def printStats(self,dicStats,dicPlays,player,movesStates):
+        for x in sorted(((100*dicStats.get((player,S),0)/
+                          dicPlays.get((player,S),1),
+                          dicStats.get((player,S),0),
+                          dicPlays.get((player,S),0),p)
                             for p,S in movesStates),
                             reverse=True) :
             print("{3}:{0:.2f}%({1}/{2})".format(*x))
         
-        #print stats for losing
+    def getMove(self):
+        """ Call AI to calculate best move from current state and return it """
+        player = self._board.currPlayer()
+        legalMoves = self._board.legalMoves()
+        # no need to run simulation if there are no real choices
+        # so return accordingly
+        if not legalMoves:
+            return None
+        if len(legalMoves) == 1:
+            return legalMoves[0]
+        games = 0
+        begin = datetime.datetime.utcnow() # gets current time
+        # run the simulation till the specified time
+        while datetime.datetime.utcnow() - begin < self._simTime:
+            self.runSimulation()
+            games += 1
+        # list of tuples of move and state resulting from move
+        movesStates = [(p,self._board.getStateAfterMove(p)) for p in legalMoves]
+        # Display the number of calls of `run_simulation` and the
+        # time elapsed.
+        print(games, (datetime.datetime.utcnow() - begin))
+        percentWins, move = max( ( (self._wins.get((player,S),0) - self._losses.get((player,S),0)) /
+                                    self._plays.get((player,S),1), p)
+                                for p,S in movesStates )
+        # print stats for winning
+        print("Win stats")
+        self.printStats(self._wins,self._plays,player,movesStates)
+            
         print("Loss stats")
-        for x in sorted(((100*self._losses.get((player,S),0)/
-                          self._plays.get((player,S),1),
-                          self._losses.get((player,S),0),
-                          self._plays.get((player,S),0),p)
-                            for p,S in movesStates),
-                            reverse = True) :
-            print("{3}:{0:.2f}%({1}/{2})".format(*x))
-        print("Maximum Depth Searched: ",self._maxDepth)
+        self.printStats(self._losses,self._plays,player,movesStates)
         
-        #print stats for draw 
+        dicDraw = {(player,S):self._plays[(player,S)]-
+                        (self._wins[(player,S)] + self._losses[(player,S)])
+                    for p,S in movesStates}
         print("Draw stats")
-        for x in sorted(((100*self._draws.get((player,S),0)/
-                          self._plays.get((player,S),1),
-                          self._draws.get((player,S),0),
-                          self._plays.get((player,S),0),p)
-                            for p,S in movesStates),
-                            reverse = True) :
-            print("{3}:{0:.2f}%({1}/{2})".format(*x))
-        
+        self.printStats(dicDraw,self._plays,player,movesStates)
+
+        print("Maximum Depth Searched: ",self._maxDepth)
         return move
-    #playout a random game and update the statistics table
 
-
-    # Playout a random game and update the statistics table
     def runSimulation(self):
+        """ Playout a random game and update the statistics table """
         # copying some variables so that we have variable lookup instead of
         # attribute call, to make code faster
         plays, wins = self._plays, self._wins
         expandTree = True
         visitedStates = set()
         player = self._board.currPlayer()
-        statesCopy = self._states[:]
 
         # should run this simulation on a copy so as not to corrupt the actual
         # board by making moves on it
@@ -105,8 +86,8 @@ class MonteCarlo:
             movesStates = [(p, simulationBoard.getStateAfterMove(p)) for p in legalMoves]
             if len(movesStates) == 0:
                 break
-            #if stats exist for all legal moves
-            #use the UCB formula
+            # if stats exist for all legal moves
+            # use the UCB formula
             if all(plays.get((player, S)) for p, S in movesStates):
                 N = sum(plays.get((player,S)) for p,S in movesStates)
                 logN = log(N)
@@ -115,15 +96,12 @@ class MonteCarlo:
                # Play randomly
                move, state = choice(movesStates)
 
-            statesCopy.append(state)
-
             # If this is a new leaf, set statistics to 0
             if expandTree and (player, state) not in self._plays:
                 expandTree = False
                 self._plays[(player, state)] = 0
                 self._wins[(player, state)]  = 0
                 self._losses[(player, state)]  = 0
-                self._draws[(player,state)] = 0
                 if t > self._maxDepth:
                     self._maxDepth = t
 
@@ -137,16 +115,14 @@ class MonteCarlo:
             if winner:
                 break
 
+        loser = simulationBoard.opponent(winner)
+
         # Update the win and play stats for the simulation
         for player, state in visitedStates:
             if (player, state) not in self._plays:
                 continue
             self._plays[(player,state)] += 1
-            if winner==self._playerComp:
+            if player == winner:
                 self._wins[(player,state)] += 1
-            elif winner == self._playerHuman:
-                self._losses[(player,state)]+=1
-            elif winner == self._flagDraw:
-                self._draws[(player,state)]+=1
-                
-                
+            elif player == loser:
+                self._losses[(player,state)] += 1

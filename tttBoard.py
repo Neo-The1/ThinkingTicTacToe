@@ -27,7 +27,15 @@ class tttBoard:
             return 2 
         else:
             return 1
-        
+
+    def opponent(self, player):
+        """ returns opponent of passed player """
+        if player == 1:
+            return 2
+        if player == 2:
+            return 1
+        return None
+
     # Print the board
     def display(self):
         boardString = ""

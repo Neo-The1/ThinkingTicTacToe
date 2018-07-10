@@ -27,6 +27,11 @@ class tttBoard:
             return 2 
         else:
             return 1
+    def otherPlayer(self):
+        if self.currPlayer() == 1:
+            return 2
+        else:
+            return 1
         
     # Print the board
     def display(self):

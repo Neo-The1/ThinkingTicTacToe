@@ -28,7 +28,7 @@ while len(board.legalMoves()) > 0 and not(checkWin(board)):
     ttt = monteCarlo(board)
     tttMove = ttt.getMove()
     board.makeMove(tttMove)
-    print('Thinking Tic Tac Toe move...')
+    print('Thinking Tic Tac Toe move...'+str(tttMove))
     board.display()
     if checkWin(board):
         break

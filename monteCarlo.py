@@ -15,9 +15,19 @@ class monteCarlo:
         self._maxMoves = kwargs.get('maxMoves', 100)
         self._wins = {}
         self._plays = {}
+        self._losses = {}
         self._C = kwargs.get('C',1.4)
         self._maxDepth = 0
-
+        
+    def printStats(self,dicStats,dicPlays,player,movesStates):
+        for x in sorted(((100*dicStats.get((player,S),0)/
+                          dicPlays.get((player,S),1),
+                          dicStats.get((player,S),0),
+                          dicPlays.get((player,S),0),p)
+                            for p,S in movesStates),
+                            reverse=True) :
+            print("{3}:{0:.2f}%({1}/{2})".format(*x))
+        
     def getMove(self):
         """ Call AI to calculate best move from current state and return it """
         player = self._board.currPlayer()
@@ -39,18 +49,21 @@ class monteCarlo:
         # Display the number of calls of `run_simulation` and the
         # time elapsed.
         print(games, (datetime.datetime.utcnow() - begin))
-        percentWins, move = max( (self._wins.get((player,S),0)/
-                                  self._plays.get((player,S),1), p) 
+        percentWins, move = max( ( (self._wins.get((player,S),0) - self._losses.get((player,S),0)) /
+                                    self._plays.get((player,S),1), p)
                                 for p,S in movesStates )
         # print stats for winning
         print("Win stats")
-        for x in sorted(((100*self._wins.get((player,S),0)/
-                          self._plays.get((player,S),1),
-                          self._wins.get((player,S),0),
-                          self._plays.get((player,S),0),p)
-                            for p,S in movesStates),
-                            reverse=True) :
-            print("{3}:{0:.2f}%({1}/{2})".format(*x))
+        self.printStats(self._wins,self._plays,player,movesStates)
+            
+        print("Loss stats")
+        self.printStats(self._losses,self._plays,player,movesStates)
+        
+        dicDraw = {(player,S):self._plays[(player,S)]-
+                        (self._wins[(player,S)] + self._losses[(player,S)])
+                    for p,S in movesStates}
+        print("Draw stats")
+        self.printStats(dicDraw,self._plays,player,movesStates)
 
         print("Maximum Depth Searched: ",self._maxDepth)
         return move
@@ -88,6 +101,7 @@ class monteCarlo:
                 expandTree = False
                 self._plays[(player, state)] = 0
                 self._wins[(player, state)]  = 0
+                self._losses[(player, state)]  = 0
                 if t > self._maxDepth:
                     self._maxDepth = t
 
@@ -101,6 +115,8 @@ class monteCarlo:
             if winner:
                 break
 
+        loser = simulationBoard.opponent(winner)
+
         # Update the win and play stats for the simulation
         for player, state in visitedStates:
             if (player, state) not in self._plays:
@@ -108,4 +124,5 @@ class monteCarlo:
             self._plays[(player,state)] += 1
             if player == winner:
                 self._wins[(player,state)] += 1
-
+            elif player == loser:
+                self._losses[(player,state)] += 1

@@ -2,6 +2,7 @@
 # ------------------------------------------------------------------------------
 import sys
 from tttBoard import tttBoard
+from monteCarlo import monteCarlo
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QPointF, QRect
 from PyQt5.QtGui import QPen, QImage, QPixmap
@@ -16,7 +17,7 @@ class tttScene(QGraphicsScene):
         QGraphicsScene.__init__(self, *args, **kwds)
         self._canvasSize = kwds.get('size', 520)
         self._borderMargin = 10
-        self._board = kwds.get('board', tttBoard(4))
+        self._board = kwds.get('board', tttBoard(3))
         self._OImage = QImage("res/O.png")
         self._XImage = QImage("res/X.png")
 
@@ -46,28 +47,35 @@ class tttScene(QGraphicsScene):
         if ev.button() == QtCore.Qt.LeftButton:
             pos = ev.scenePos()
             cellID = self.cellAt(pos.x(), pos.y())
-            move = cellID
-            if move >= self._board._boardSize       or\
-               move not in self._board.legalMoves() or\
-               self._board.winner() > 0:
-                # illegal move
-                return
+            self.makeMove(cellID)
+            self.update()
+            # follows engine's play
+            mc = monteCarlo(self._board)
+            self.makeMove(mc.getMove())
 
-            image = None
-            sideToMove = self._board.currPlayer()
-            if sideToMove == 1:
-                image = self._OImage
-            if sideToMove == 2:
-                image = self._XImage
+    def makeMove(self, move):
+        if move >= self._board._boardSize       or\
+           move not in self._board.legalMoves() or\
+           self._board.winner() > 0:
+           # illegal move
+           return
 
-            self._board.makeMove(cellID)
+        image = None
+        sideToMove = self._board.currPlayer()
+        if sideToMove == 1:
+            image = self._OImage
+        if sideToMove == 2:
+            image = self._XImage
 
-            user = QGraphicsPixmapItem(QPixmap.fromImage(image))
-            user.setScale(0.15)
-            cc = self.cellCenter(cellID)
-            cellSize = self.cellSize()
-            user.setPos(int(cc[0] - 0.25 * cellSize), int(cc[1] - 0.25 * cellSize))
-            self.addItem(user)
+        self._board.makeMove(move)
+
+        playerIcon = QGraphicsPixmapItem(QPixmap.fromImage(image))
+        playerIcon.setScale(0.15)
+        cellID = move
+        cc = self.cellCenter(cellID)
+        cellSize = self.cellSize()
+        playerIcon.setPos(int(cc[0] - 0.25 * cellSize), int(cc[1] - 0.25 * cellSize))
+        self.addItem(playerIcon)
 
     def drawCells(self):
         cellSize = self.cellSize()
@@ -123,3 +131,4 @@ class tttGui:
 
     def show(self):
         self._mainWindow.show()
+        sys.exit(self._app.exec_())

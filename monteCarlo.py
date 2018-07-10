@@ -49,8 +49,8 @@ class monteCarlo:
         # Display the number of calls of `run_simulation` and the
         # time elapsed.
         print(games, (datetime.datetime.utcnow() - begin))
-        percentWins, move = max( (self._wins.get((player,S),0)-self._losses.get((player,S),0)/
-                                    self._plays.get((player,S),1), p) 
+        percentWins, move = max( ( (self._wins.get((player,S),0) - self._losses.get((player,S),0)) /
+                                    self._plays.get((player,S),1), p)
                                 for p,S in movesStates )
         # print stats for winning
         print("Win stats")

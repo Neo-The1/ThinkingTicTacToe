@@ -15,9 +15,13 @@ class monteCarlo:
         self._maxMoves = kwargs.get('maxMoves', 100)
         self._wins = {}
         self._plays = {}
+        self._losses = {}
+        self._draws = {}
         self._C = kwargs.get('C',1.4)
         self._maxDepth = 0
-
+        self._playerHuman = 1 #define winner return for human as per tttBoard
+        self._playerComp = 2 #define winner return for comp, as per tttBoard
+        self._drawflag = -1 #define winner return  for draw, as per tttBoard
     def getMove(self):
         """ Call AI to calculate best move from current state and return it """
         player = self._board.currPlayer()
@@ -39,14 +43,33 @@ class monteCarlo:
         # Display the number of calls of `run_simulation` and the
         # time elapsed.
         print(games, (datetime.datetime.utcnow() - begin))
-        percentWins, move = max( (self._wins.get((player,S),0)/
-                                  self._plays.get((player,S),1), p) 
+        percentWins, move = max( (
+                                    (self._wins.get((player,S),0)+self._draws.get((player,S),0)-self._losses.get((player,S),0))/
+                                    self._plays.get((player,S),1), p) 
                                 for p,S in movesStates )
         # print stats for winning
         print("Win stats")
         for x in sorted(((100*self._wins.get((player,S),0)/
                           self._plays.get((player,S),1),
                           self._wins.get((player,S),0),
+                          self._plays.get((player,S),0),p)
+                            for p,S in movesStates),
+                            reverse=True) :
+            print("{3}:{0:.2f}%({1}/{2})".format(*x))
+            
+        print("Loss stats")
+        for x in sorted(((100*self._losses.get((player,S),0)/
+                          self._plays.get((player,S),1),
+                          self._losses.get((player,S),0),
+                          self._plays.get((player,S),0),p)
+                            for p,S in movesStates),
+                            reverse=True) :
+            print("{3}:{0:.2f}%({1}/{2})".format(*x))
+            
+        print("Draw stats")
+        for x in sorted(((100*self._draws.get((player,S),0)/
+                          self._plays.get((player,S),1),
+                          self._draws.get((player,S),0),
                           self._plays.get((player,S),0),p)
                             for p,S in movesStates),
                             reverse=True) :
@@ -88,6 +111,8 @@ class monteCarlo:
                 expandTree = False
                 self._plays[(player, state)] = 0
                 self._wins[(player, state)]  = 0
+                self._losses[(player, state)]  = 0
+                self._draws[(player, state)]  = 0
                 if t > self._maxDepth:
                     self._maxDepth = t
 
@@ -106,6 +131,12 @@ class monteCarlo:
             if (player, state) not in self._plays:
                 continue
             self._plays[(player,state)] += 1
-            if player == winner:
+#            if player == winner:
+#                self._wins[(player,state)] += 1
+            if player == self._playerComp and winner == self._playerComp:
                 self._wins[(player,state)] += 1
+            elif player == self._playerComp and winner == self._playerHuman:
+                self._losses[(player,state)] += 1
+            elif player == self._playerComp and winner == self._drawflag:
+                self._draws[(player,state)] += 1
 

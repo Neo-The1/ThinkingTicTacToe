@@ -1,8 +1,87 @@
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 from tttBoard import tttBoard
-from monteCarlo import monteCarlo
 from deepNeuralNetwork import dnNetwork
+
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+class alphaZeroMCTS:
+    """ alpha zero monte carlo tree search algorithm. Refer to alpha zero paper
+        for notations. Variables directly corresponds to the notation in paper
+        s : used for board
+        a : used for a move
+     """
+    def __init__(self, *kargs, **kwds):
+        self._P_sa = {}
+        self._N_sa = {}
+        self._Q_sa = {}
+        # if move 'a' from board pos 's' led to board pos 'sp' following
+        # dictionary will store opinion of neural network about winner for 'sp'
+        self._saTosp = {}
+
+    def hashAction(self, board, move):
+        pass
+
+    def ucb(self, s, a):
+        """ returns upper confidence bound for choosing move a from board
+            position s
+        """
+        K = 1.0
+        return self._Q_sa[(s, a)] + K * self._P[(s, a)] / ( 1.0 + self._N_sa[(s, a)] )
+
+    def expandNode(self, s, network):
+        """ expands the leaf node i.e. board s if no simulation data from this
+            position is available. Move probabilities will be generated and winner
+            will be predicted  neural network
+        """
+        return network.evaluate(s)
+
+    def runSimulation(self, s, maxMoves, network):
+        """ runs a monte carlo tree search simulation and updates search
+            statistics
+        """
+        visitedActions = set()
+
+        # should run this simulation on a copy so as not to corrupt the actual
+        # board by making moves on it
+        simulationBoard = copy.deepcopy(self._board)
+
+        nodeExpanded = False
+
+        for t in range(maxMoves):
+            legalMoves = simulationBoard.legalMoves()
+            s = simulationBoard.getState()
+            if len(legalMoves) == 0:
+                break
+            # if stats exist for all legal moves
+            # use the UCB formula
+            if all(self._N_sa.get((s, a)) for a in legalMoves):
+                ucbValue, move= max((self.ucb(s, a), a) for a in legalMoves)
+                visitedActions.add((s, move))
+                simulationBoard.makeMove(move)
+                winner = simulationBoard.winner()
+                if winner:
+                    break
+                continue
+
+            # use neural network to evaluate this leaf node and stop simulating
+            # networkEval is a list of probabilities of making a move on each square
+            # of the board and a last entry {-1, 0, 1} to estimate winner
+            networkEval = self.expandNode(simulationBoard, network)
+            nodeExpanded = True
+            break
+
+        # Update the statistics for this simulation
+        if nodeExpanded:
+            for ii in range(simulationBoard.getSize()):
+                move = ii
+                self._P_sa[(s, move)] = networkEval[ii]
+
+        for board, move in visitedActions:
+            self._N_sa[(board, move)] += 1
+            hashVal = self.hashAction(board, move)
+            self._saTosp[(hashVal, simulationBoard.getState())] += networkEval[-1]
+            self._Q_sa[(board, move)] = self._saTosp[(hashVal, simulationBoard.getState())] / self._N_sa[(board, move)]
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------

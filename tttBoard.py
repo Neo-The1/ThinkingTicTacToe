@@ -11,7 +11,7 @@ class tttBoard:
     def __init__(self, n):
         #board is a size nxn list containing 0,1 or 2 depending upon whether 
         #it is empty, O or X respectively
-        self._board = [0]*n*n            
+        self._board = [0]*n*n
         self._state = "".join([str(p) for p in self._board])
         #history contains the list of all moves
         self._history = []
@@ -39,7 +39,7 @@ class tttBoard:
     # Print the board
     def display(self):
         boardString = ""
-        for ii in range(self._boardSize):                
+        for ii in range(self._boardSize):
             boardSq = self._board[ii]
             if ii % self._1Dsize == 0:
                 boardString += "\n"
@@ -51,7 +51,6 @@ class tttBoard:
                 boardString += ". "
         print(boardString)
 
-    
     # Generate all possible moves from current board state
     # A move is an integer position for Boardsq at which move is to be made
     def legalMoves(self):
@@ -73,6 +72,12 @@ class tttBoard:
             self._history.append('X'+str(move))
         return self._state
 
+    def getSize(self):
+        return self._1Dsize
+
+    def getState(self):
+        return "".join([str(p) for p in self._board])
+
     def getStateAfterMove(self, move):
         boardcopy = self._board[:]
         boardcopy[move] = self.currPlayer()
@@ -82,13 +87,13 @@ class tttBoard:
     # we will assume indexing of positons in board and corresponding in integer
     #evalBoard is one player's board
     #a n-bit integer with 0s at empty places and 1 at places occupied by player
-    
+
     def checkWin(self,evalBoard):
         # function to check if a given bit in n-bit is 1 or not
         def testBit(num, bitpos):
             return ( num & ( 1 << bitpos ) )
         #we set these values to be true and later and them with test bit for
-        #locations we need to check. If unoccupied, they will turn False        
+        #locations we need to check. If unoccupied, they will turn False
         oneDBoardSize = self._1Dsize
         winDiag1 = True
         winDiag2 = True
@@ -105,7 +110,7 @@ class tttBoard:
             startRow = ii*oneDBoardSize 
             startCol = ii
             row  = startRow
-            col =  startCol           
+            col =  startCol
             for jj in range(oneDBoardSize):
                 #win will be set to False if testing pos is empty
                 #check rows
@@ -118,7 +123,7 @@ class tttBoard:
                 return True
         # if no win occured
         return False
-    
+
     #To check winner, we create a n bit integer for each player with 0s at 
     #empty places and 1s at places player occupies
     def winner(self):

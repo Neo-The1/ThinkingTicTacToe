@@ -2,6 +2,7 @@
 # ------------------------------------------------------------------------------
 from tttBoard import tttBoard
 from deepNeuralNetwork import dnNetwork
+import copy
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
@@ -11,17 +12,20 @@ class alphaZeroMCTS:
         s : used for board
         a : used for a move
      """
-    def __init__(self, *kargs, **kwds):
+    def __init__(self,board, *kargs, **kwds):
         self._P_sa = {}
         self._N_sa = {}
         self._Q_sa = {}
         # if move 'a' from board pos 's' led to board pos 'sp' following
         # dictionary will store opinion of neural network about winner for 'sp'
         self._saTosp = {}
+        self._board = board
+        self._p = [0]*self._board.getSize()
+        self._v = None
 
     def hashAction(self, board, move):
         pass
-
+        
     def ucb(self, s, a):
         """ returns upper confidence bound for choosing move a from board
             position s
@@ -82,6 +86,18 @@ class alphaZeroMCTS:
             hashVal = self.hashAction(board, move)
             self._saTosp[(hashVal, simulationBoard.getState())] += networkEval[-1]
             self._Q_sa[(board, move)] = self._saTosp[(hashVal, simulationBoard.getState())] / self._N_sa[(board, move)]
+            
+        def selfPlay(self):
+            """returns  the vector p and scalar v as a list"""
+            legalMoves = self._board.legalMoves()
+            for ii in range(simulationBoard.getSize()):
+                if ii in legalMoves:
+                    self._p = self._P_sa[(self._board,move)]
+            self._v = winner
+            return self._p.append(self._v)
+                    
+                
+            
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
@@ -92,11 +108,11 @@ class alphaZeroAlgo:
         search i.e. to train the network to achieve parameters such that it
         generates similar move probabilities and winner prediction
     """
-    def __init__(self, *kargs, *kwds):
+    def __init__(self, *kargs, **kwds):
         self._boardSize = kwds.get('boardsize', 3)
         inputLayerSize  = 2 * self._boardSize * self._boardSize + 1
         outputLayerSize = self._boardSize + 1
-        self._network   = dnNetwork(layers = [inputLayerSize, 64, 32, outputLayerSize])
+        self._network   = dnNetwork(layers = [inputLayerSize, 64, 32, outputLayerSize])        
         self._trainingData = []
 
     def selfPlay(self):
@@ -104,13 +120,13 @@ class alphaZeroAlgo:
             which can be used to train the network
         """
         board = tttBoard(self._boardSize)
-        mc    = monteCarlo(board, self._network)
+        mc    = alphaZeroMCTS(board, self._network)
         return mc.selfPlay()
 
     def train(self, iterations):
         """ train the network for requested number of iterations """
         for it in range(iterations):
-            self._trainingData.append(training self.selfPlay())
+            self._trainingData.append(self.selfPlay())
             self._network.train(self._trainingData)
 
     def saveNetwork(self, filename):

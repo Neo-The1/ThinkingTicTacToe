@@ -3,6 +3,7 @@
 from tttBoard import tttBoard
 from deepNeuralNetwork import dnNetwork
 import copy
+import numpy as np
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
@@ -38,7 +39,7 @@ class alphaZeroMCTS:
             position is available. Move probabilities will be generated and winner
             will be predicted  neural network
         """
-        return network.evaluate(s)
+        return network.predict(s)
 
     def runSimulation(self, s, maxMoves, network):
         """ runs a monte carlo tree search simulation and updates search
@@ -68,10 +69,10 @@ class alphaZeroMCTS:
                     break
                 continue
 
-            # use neural network to evaluate this leaf node and stop simulating
-            # networkEval is a list of probabilities of making a move on each square
+            # use neural network to predict this leaf node and stop simulating
+            # networkPredict is a list of probabilities of making a move on each square
             # of the board and a last entry {-1, 0, 1} to estimate winner
-            networkEval = self.expandNode(simulationBoard, network)
+            networkPredict = self.expandNode(simulationBoard, network)
             nodeExpanded = True
             break
 
@@ -79,12 +80,12 @@ class alphaZeroMCTS:
         if nodeExpanded:
             for ii in range(simulationBoard.getSize()):
                 move = ii
-                self._P_sa[(s, move)] = networkEval[ii]
+                self._P_sa[(s, move)] = networkPredict[ii]
 
         for board, move in visitedActions:
             self._N_sa[(board, move)] += 1
             hashVal = self.hashAction(board, move)
-            self._saTosp[(hashVal, simulationBoard.getState())] += networkEval[-1]
+            self._saTosp[(hashVal, simulationBoard.getState())] += networkPredict[-1]
             self._Q_sa[(board, move)] = self._saTosp[(hashVal, simulationBoard.getState())] / self._N_sa[(board, move)]
             
         def selfPlay(self):

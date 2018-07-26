@@ -1,6 +1,8 @@
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 import tensorflow as tf
+import numpy as np
+from tensorflow import keras
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 class dnNetwork():
@@ -12,45 +14,40 @@ class dnNetwork():
             first item in the list refers to the size of input layer.
             last item in the list refers to the size of output layer.
         """
+        self.saveFile = kwds.get('saveFile')
         self._layerSizes = kwds.get('layers', [])
-        self._optimizer = kwds.get('optimizer', tf.train.AdamOptimizer(1e-4))
-        assert len(self._layerSizes) > 2
-        # placeholder for input features
-        self._featureColumns = [tf.feature_column.numeric_column('p', shape=10)]
-        """ now initialize the underlying estimator
-        """
-        self._estimator = tf.estimator.DNNClassifier( feature_columns = self._featureColumns,
-                                                    hidden_units = [layerSize for layerSize in self._layerSizes[1:-1]],
-                                                    optimizer = self._optimizer,
-                                                    n_classes = 10,
-                                                    dropout = 0.1,
-                                                    model_dir = './tmp/dNNmodel' )
+        self._layer1 = keras.layers.Dense(self._layerSizes[1],activation='relu')
+        self._layer2 = keras.layers.Dense(self._layerSizes[2],activation='relu')    
+        self._outLayer = keras.layers.Dense(self._layerSizes[0],activation='softmax')
+        self._inputs = keras.Input(shape=(self._layerSizes[0],)) #returns placeholder
+        x = self._layer1(self._inputs)
+        x = self._layer2(x)
+        self._outputs = self._outLayer(x)
+        self._model = keras.Model(inputs=self._inputs,outputs=self._outputs)
+        self._model.compile(optimizer=tf.train.AdamOptimizer,
+                      loss='categorical_crossentropy',
+                      metrics=['accuracy'])
 
 
-
-    def loadFromFile(self, filename):
+    def loadFromFile(self):
         """ Load the network parameters from a file
         """
+        self._model.load_weights('my_model')
         return None
 
-    def saveToFile(self, fileName):
+    def saveToFile(self):
         """ Save the network parameters to a file
         """
+        self._model.save_weights('./my_model')
         return None
 
-    def train(self, trainingData):
-        """ Train the network using passed training data
+    def train(self, trainData,trainLabels):
+        """ Train the network using passed training data as numpy array
         """
-        inputFn = tf.estimator.inputs.numpy_input_fn(trainingData,
-                                                     y = None,
-                                                     num_epochs=None,
-                                                     batch_size = 1,
-                                                     shuffle = True)
-        self._estimator.train( input_fn = inputFn, steps = 2000 )
+        self._model.fit(trainData,trainLabels,batch_size=1,epochs=1)
     
     def predict(self,inputState):
-        prediction = self._estimator.predict(input_fn = inputState)
-        return prediction
+        return None
 
 #    def evaluate(self, evalData):
 #        """ evaluate accuracy

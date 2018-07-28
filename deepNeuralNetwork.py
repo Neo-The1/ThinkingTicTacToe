@@ -31,13 +31,13 @@ class dnNetwork():
                       metrics=['accuracy'])
 
 
-    def loadFromFile(self):
+    def loadModel(self):
         """ Load the network parameters from a file
         """
         self._model.load_weights('my_model')
         return None
 
-    def saveToFile(self):
+    def saveModel(self):
         """ Save the network parameters to a file
         """
         self._model.save_weights('./my_model')
@@ -52,13 +52,13 @@ class dnNetwork():
     def predict(self,x):
         """Predict the output, given input
         """
-        
         return self._model.predict(x)
 
     def evaluate(self,test_x,test_y):
         """ evaluate accuracy
         """
-        self._model.evaluate(test_x,test_y)
+        testLoss, testAcc = self._model.evaluate(test_x,test_y)
+        print("Test Accuracy :",testAcc)
         return None
         
 # ------------------------------------------------------------------------------
@@ -73,7 +73,15 @@ if __name__ == "__main__":
     test_x = mnist.test.images
     test_y = keras.utils.to_categorical(mnist.test.labels)
     testNetwork.train(train_x,train_y)
+    print("evaluation of test net")
     testNetwork.evaluate(test_x,test_y)
-    predictions = testNetwork.predict(train_x)
+    testNetwork.saveModel()
+    newNetwork = dnNetwork(layers = [784,64,32,10])
+    newNetwork.loadModel()
+    predictionsTest = testNetwork.predict(train_x)
+    predictionsNew = newNetwork.predict(train_x)
+    print("evaluation of new net")
+    testNetwork.evaluate(test_x,test_y)
     print("Label: ",np.argmax(train_y[1]))
-    print("Prediction: ",np.argmax(predictions[1]))
+    print("test Net Prediction: ",np.argmax(predictionsTest[1]))
+    print("New Net Prediction: ",np.argmax(predictionsTest[1]))

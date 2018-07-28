@@ -57,8 +57,8 @@ class dnNetwork():
     def evaluate(self,test_x,test_y):
         """ evaluate accuracy
         """
-        testLoss, testAcc = self._model.evaluate(test_x,test_y)
-        print("Test Accuracy :",testAcc)
+        evalLoss, evalAcc = self._model.evaluate(test_x,test_y)
+        print("Evaluation Accuracy :",evalAcc)
         return None
         
 # ------------------------------------------------------------------------------

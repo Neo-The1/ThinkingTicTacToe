@@ -13,19 +13,25 @@ class alphaZeroMCTS:
         s : used for board
         a : used for a move
      """
-    def __init__(self,board, *kargs, **kwds):
+    def __init__(self,board, network, *kargs, **kwds):
         self._P_sa = {}
         self._N_sa = {}
         self._Q_sa = {}
+        self._W_sa = {}
         # if move 'a' from board pos 's' led to board pos 'sp' following
         # dictionary will store opinion of neural network about winner for 'sp'
-        self._saTosp = {}
+        #self._saTosp = {}
         self._board = board
         self._p = [0]*self._board.getSize()
         self._v = None
+        self._pi = [0]*self._board.getSize()
+        self._z = None
+        self._network = network
+        self._maxMoves = 1000
 
-    def hashAction(self, board, move):
-        pass
+
+#    def hashAction(self, board, move):
+#        pass
         
     def ucb(self, s, a):
         """ returns upper confidence bound for choosing move a from board
@@ -34,28 +40,20 @@ class alphaZeroMCTS:
         K = 1.0
         return self._Q_sa[(s, a)] + K * self._P[(s, a)] / ( 1.0 + self._N_sa[(s, a)] )
 
-    def expandNode(self, s, network):
-        """ expands the leaf node i.e. board s if no simulation data from this
-            position is available. Move probabilities will be generated and winner
-            will be predicted  neural network
-        """
-        return network.predict(s)
-
-    def runSimulation(self, s, maxMoves, network):
+    def runSimulation(self):
         """ runs a monte carlo tree search simulation and updates search
             statistics
         """
         visitedActions = set()
-
         # should run this simulation on a copy so as not to corrupt the actual
         # board by making moves on it
         simulationBoard = copy.deepcopy(self._board)
-
+        s = simulationBoard.getState()
         nodeExpanded = False
 
         for t in range(maxMoves):
             legalMoves = simulationBoard.legalMoves()
-            s = simulationBoard.getState()
+            #stop if no legal moves
             if len(legalMoves) == 0:
                 break
             # if stats exist for all legal moves
@@ -65,39 +63,65 @@ class alphaZeroMCTS:
                 visitedActions.add((s, move))
                 simulationBoard.makeMove(move)
                 winner = simulationBoard.winner()
-                if winner:
-                    break
-                continue
-
-            # use neural network to predict this leaf node and stop simulating
+                s = simulationBoard.getState()
+            if winner:
+               break
+            # use neural network to predict this leaf node
             # networkPredict is a list of probabilities of making a move on each square
             # of the board and a last entry {-1, 0, 1} to estimate winner
-            networkPredict = self.expandNode(simulationBoard, network)
+            networkPredict = self._network.predict(s, network)
             nodeExpanded = True
             break
-
         # Update the statistics for this simulation
-        if nodeExpanded:
+        if  nodeExpanded:
             for ii in range(simulationBoard.getSize()):
                 move = ii
+                self._N_sa[(s,move)] = 0
+                self._Q_sa[(s,move)] = 0
+                self._W_sa[(s,move)] = 0
                 self._P_sa[(s, move)] = networkPredict[ii]
 
-        for board, move in visitedActions:
-            self._N_sa[(board, move)] += 1
-            hashVal = self.hashAction(board, move)
-            self._saTosp[(hashVal, simulationBoard.getState())] += networkPredict[-1]
-            self._Q_sa[(board, move)] = self._saTosp[(hashVal, simulationBoard.getState())] / self._N_sa[(board, move)]
+        for s, move in visitedActions:
+            self._N_sa[(s, move)] += 1
+            #hashVal = self.hashAction(board, move)
+            #self._saTosp[(hashVal, simulationBoard.getState())] += networkPredict[-1]
+            #self._Q_sa[(board, move)] = self._saTosp[(hashVal, simulationBoard.getState())] / self._N_sa[(board, move)]
+            self._W_sa[(s, move)] +=networkPredict[-1] #winner is last entry in network output
+            self._Q_sa[(s, move)] = self._W_sa[(s, move)]/self._N_sa[(s, move)]
             
-        def selfPlay(self):
-            """returns  the vector p and scalar v as a list"""
+        def getMCTSMove(self,tau):
+            """ returns  the vector pi of move probability at each move
+                and scalar winner z
+                tau is a parameter which determines whether max move is returned (tau=0)
+                or whether a proportional probability is returned (tau = 1)
+            """
             legalMoves = self._board.legalMoves()
-            for ii in range(simulationBoard.getSize()):
+            s = self._board.getState()
+            # no need to run simulation if there are no real choices
+            # so return accordingly
+            if not legalMoves:
+                return None
+            if len(legalMoves) == 1:
+                return legalMoves[0]
+            games = 0
+            while games < 5000:
+                self.runSimulation()
+                games+=1
+
+            for ii in range(self._board.getSize()):
                 if ii in legalMoves:
-                    self._p = self._P_sa[(self._board,move)]
-            self._v = winner
-            return self._p.append(self._v)
-                    
-                
+                    self._pi[ii] = self._N_sa[(s,ii)]
+            self._z = winner
+            #normalize pi is tau = 1, convert it to one hot if tau = 0
+            N = np.sum(self._pi) #total N, needed to normalize
+            if tau == 1:
+                self._pi = np.divide(self._pi,N)
+            if tau == 0:
+                newPi = [0]*simulationBoard.getSize()
+                newPi[(np.argmax(self._pi))] = 1.0
+                self._pi = newPi
+            
+            return self._pi,self._z
             
 
 # ------------------------------------------------------------------------------
@@ -119,10 +143,10 @@ class alphaZeroAlgo:
     def selfPlay(self):
         """ play a game using mcts and return the generated game play data
             which can be used to train the network
-        """
+        """        
         board = tttBoard(self._boardSize)
         mc    = alphaZeroMCTS(board, self._network)
-        return mc.selfPlay()
+        return mc.getMCTSMove()
 
     def train(self, iterations):
         """ train the network for requested number of iterations """

@@ -1,9 +1,9 @@
 from alphaZeroMCTS import alphaZeroMCTS
 from tttBoard import tttBoard
 from deepNeuralNetwork import dnNetwork
+import numpy as np
 
-trainLabels = {}
-states = {}
+playedMoves = set()
 boardSize = 3
 gamesTrain = 500
 board = tttBoard(boardSize)
@@ -22,12 +22,15 @@ def checkWin(board):
 games = 0
 while games < gamesTrain:
     while len(board.legalMoves()) > 0 and not(checkWin(board)):
+        state = board.getState()
+        #load saved wrights
+        brain.loadModel()
         alphaZeroTTT = alphaZeroMCTS(board,brain)
-        tttMove = alphaZeroTTT.getMove()
-        trainLabels[board.getState()] = alphaZeroMCTS.getMCTSMove()
+        pi = alphaZeroTTT.getMCTSMoveProbs()
+        playedMoves.add((state,pi))
         player = board.currPlayer()
-        board.makeMove(tttMove)
-        print('train labels'+str(tttMove))
+        board.makeMove(np.argmax(pi))
+        print('train labels'+str(pi))
         if checkWin(board):
             games+=1
             if player == board.winner():
@@ -35,8 +38,15 @@ while games < gamesTrain:
             else:
                 z = -1
             break
+    for state,pi in playedMoves:
+        #define the training data structure here, 
+        #add z to pi to make output vector
+        #add states to make input vector
+        states = None
+    #train data
+    brain.train(states,[pi,z])
+    #save weights
+    brain.saveModel()
     
-    for move in trainLabels:
-        trainLabels
     
 

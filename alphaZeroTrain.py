@@ -23,7 +23,7 @@ games = 0
 while games < gamesTrain:
     while len(board.legalMoves()) > 0 and not(checkWin(board)):
         state = board.getState()
-        #load saved wrights
+        #load saved weights
         brain.loadModel()
         alphaZeroTTT = alphaZeroMCTS(board,brain)
         pi = alphaZeroTTT.getMCTSMoveProbs()
@@ -42,9 +42,10 @@ while games < gamesTrain:
         #define the training data structure here, 
         #add z to pi to make output vector
         #add states to make input vector
+        piZ = np.array(pi,z)
         states = None
     #train data
-    brain.train(states,[pi,z])
+    brain.train(states,piZ)
     #save weights
     brain.saveModel()
     

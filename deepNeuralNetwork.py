@@ -4,6 +4,7 @@ import tensorflow as tf
 from tensorflow import keras
 import numpy as np
 from tensorflow.examples.tutorials.mnist import input_data
+from keras.backend import K
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 class dnNetwork():
@@ -16,7 +17,7 @@ class dnNetwork():
             last item in the list refers to the size of output layer.
         """
         #currently the code is only for 2 hidden layers, apart from in and out
-        self.saveFile = kwds.get('saveFile')
+        self._saveFile = kwds.get('saveFile')
         self._layerSizes = kwds.get('layers', [])
         self._layer1 = keras.layers.Dense(self._layerSizes[1],activation='relu')
         self._layer2 = keras.layers.Dense(self._layerSizes[2],activation='relu')    
@@ -27,10 +28,12 @@ class dnNetwork():
         self._outputs = self._outLayer(x)
         self._model = keras.Model(inputs=self._inputs,outputs=self._outputs)
         self._model.compile(optimizer=tf.train.AdamOptimizer(0.001),
-                      loss='categorical_crossentropy',
+                      loss=self.loss,
                       metrics=['accuracy'])
 
-
+    def loss(yTrue,yPred):
+        return K.square(yTrue[-1]-yPred[-1]) - K.dot(K.transpose(yTrue[0:-1]),K.log(yPred[0:-1]))
+    
     def loadModel(self):
         """ Load the network parameters from a file
         """
@@ -46,7 +49,7 @@ class dnNetwork():
     def train(self, train_x,train_y):
         """ Train the network using passed training data as numpy array
         """
-        self._model.fit(train_x,train_y,batch_size=32,epochs = 1)
+        self._model.fit(train_x,train_y,batch_size=1,epochs = 1)
         return None
     
     def predict(self,x):

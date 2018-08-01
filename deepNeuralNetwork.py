@@ -3,8 +3,7 @@
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
-from tensorflow.examples.tutorials.mnist import input_data
-from keras.backend import K
+#from tensorflow.examples.tutorials.mnist import input_data
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 class dnNetwork():
@@ -31,8 +30,10 @@ class dnNetwork():
                       loss=self.loss,
                       metrics=['accuracy'])
 
-    def loss(yTrue,yPred):
-        return K.square(yTrue[-1]-yPred[-1]) - K.dot(K.transpose(yTrue[0:-1]),K.log(yPred[0:-1]))
+    def loss(self,yTrue,yPred):
+        loss = keras.backend.square(yTrue[-1]-yPred[-1])
+        - keras.backend.dot(keras.backend.transpose(yTrue[0:-1]),keras.backend.log(yPred[0:-1]))
+        return loss
     
     def loadModel(self):
         """ Load the network parameters from a file
@@ -66,25 +67,33 @@ class dnNetwork():
         
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
-#testing on mnist data
 if __name__ == "__main__":
-    #testing on mnist data
-    mnist = input_data.read_data_sets('MNIST_data')
-    testNetwork = dnNetwork(layers = [784,64,32,10])
-    train_x = mnist.train.images
-    train_y = keras.utils.to_categorical(mnist.train.labels)
-    test_x = mnist.test.images
-    test_y = keras.utils.to_categorical(mnist.test.labels)
-    testNetwork.train(train_x,train_y)
-    print("evaluation of test net")
-    testNetwork.evaluate(test_x,test_y)
-    testNetwork.saveModel()
-    newNetwork = dnNetwork(layers = [784,64,32,10])
-    newNetwork.loadModel()
-    predictionsTest = testNetwork.predict(train_x)
-    predictionsNew = newNetwork.predict(train_x)
-    print("evaluation of new net")
-    testNetwork.evaluate(test_x,test_y)
-    print("Label: ",np.argmax(train_y[1]))
-    print("test Net Prediction: ",np.argmax(predictionsTest[1]))
-    print("New Net Prediction: ",np.argmax(predictionsTest[1]))
+#    #testing on mnist data
+#    mnist = input_data.read_data_sets('MNIST_data')
+#    testNetwork = dnNetwork(layers = [784,64,32,10])
+#    train_x = mnist.train.images
+#    train_y = keras.utils.to_categorical(mnist.train.labels)
+#    test_x = mnist.test.images
+#    test_y = keras.utils.to_categorical(mnist.test.labels)
+#    testNetwork.train(train_x,train_y)
+#    print("evaluation of test net")
+#    testNetwork.evaluate(test_x,test_y)
+#    testNetwork.saveModel()
+#    newNetwork = dnNetwork(layers = [784,64,32,10])
+#    newNetwork.loadModel()
+#    predictionsTest = testNetwork.predict(train_x)
+#    predictionsNew = newNetwork.predict(train_x)
+#    print("evaluation of new net")
+#    testNetwork.evaluate(test_x,test_y)
+#    print("Label: ",np.argmax(train_y[1]))
+#    print("test Net Prediction: ",np.argmax(predictionsTest[1]))
+#    print("New Net Prediction: ",np.argmax(predictionsTest[1]))
+    from tttBoard import tttBoard
+    board = tttBoard(3)
+    board.makeMove(5)
+    states = np.zeros([9,])
+    testNet = dnNetwork(layers=[9,64,32,10])
+    states[1] = board.decodeState(board.getState())
+    print(states)
+    print(testNet.predict(states[1]))
+    

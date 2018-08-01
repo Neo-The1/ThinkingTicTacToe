@@ -30,7 +30,7 @@ class alphaZeroMCTS:
         """
         K = 1.0
         return self._Q_sa[(s, a)] + K * self._P[(s, a)] / ( 1.0 + self._N_sa[(s, a)] )
-
+    
     def runSimulation(self):
         """ runs a monte carlo tree search simulation and updates search
             statistics
@@ -61,7 +61,7 @@ class alphaZeroMCTS:
             # networkPredict is a list of probabilities of making a move on each square
             # of the board and a last entry {-1, 0, 1} to estimate winner
             else:
-                networkPredict = self._network.predict(s,self._network)
+                networkPredict = self._network.predict(self._board.decodeState(s))
                 nodeExpanded = True
                 break
         # Update the statistics for this simulation
@@ -77,7 +77,7 @@ class alphaZeroMCTS:
             self._W_sa[(s, move)] +=networkPredict[-1] #winner is last entry in network output
             self._Q_sa[(s, move)] = self._W_sa[(s, move)]/self._N_sa[(s, move)]
             
-    def getMCTSMove(self,tau):
+    def getMCTSMoveProbs(self,tau=0):
         """ returns  the vector pi of move probability at each move
             and scalar winner z
             tau is a parameter which determines whether max move is returned (tau=0)
@@ -108,43 +108,3 @@ class alphaZeroMCTS:
             self._pi = newPi
             
         return self._pi
-            
-
-# ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-class alphaZeroAlgo:
-    """ alpha zero reenforcement learning algorithm for learning the game
-        of tic tac toe. The algorithm uses monte carlo tree search simulations
-        to generate good moves and train a neural network to mimic the mcts
-        search i.e. to train the network to achieve parameters such that it
-        generates similar move probabilities and winner prediction
-    """
-    def __init__(self, *kargs, **kwds):
-        self._boardSize = kwds.get('boardsize', 3)
-        inputLayerSize  = 2 * self._boardSize * self._boardSize + 1
-        outputLayerSize = self._boardSize + 1
-        self._network   = dnNetwork(layers = [inputLayerSize, 64, 32, outputLayerSize])        
-        self._pi = {}
-        self._z
-
-    def selfPlay(self):
-        """ play a game using mcts and return the generated game play data
-            which can be used to train the network
-        """        
-        board = tttBoard(self._boardSize)
-        mc    = alphaZeroMCTS(board, self._network)
-        self._pi[board.getState()] = mc.getMCTSMove()
-        
-    def train(self, iterations):
-        """ train the network for requested number of iterations """
-        for it in range(iterations):
-            self._trainingData.append(self.selfPlay())
-            self._network.train(self._trainingData)
-
-    def saveNetwork(self, filename):
-        self._network(filename)
-
-    def getMove(self, board):
-        """ use the network to predict a move for passed board position """
-        pass
-

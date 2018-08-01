@@ -5,6 +5,7 @@
 #Player O is 1 and Player X is 2
 #history of moves is stored in a list as 'O2','X0' etc.
 #the state will be a nxn string made by joining the list
+import numpy as np
 class tttBoard:
 
     # Initialize the board, needs n to create nxn board
@@ -17,6 +18,12 @@ class tttBoard:
         self._history = []
         self._boardSize = n*n
         self._1Dsize = n
+    
+    def decodeState(self,s):
+        state = np.zeros((self._boardSize))
+        for i in range(self._boardSize):
+            state[i] = s[i]
+        return state
 
     def currPlayer(self):
         if len(self._history)==0:

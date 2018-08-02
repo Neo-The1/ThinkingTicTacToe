@@ -1,12 +1,9 @@
-# ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-from tttBoard import tttBoard
-from deepNeuralNetwork import dnNetwork
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 import copy
 import numpy as np
-
-# ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 class alphaZeroMCTS:
     """ alpha zero monte carlo tree search algorithm. Refer to alpha zero paper
         for notations. Variables directly corresponds to the notation in paper
@@ -106,6 +103,5 @@ class alphaZeroMCTS:
             newPi = [0]*self._board._boardSize
             newPi[(np.argmax(self._pi))] = 1
             self._pi = newPi.copy()
-            print(self._pi)
-        #need to return strong for hashability    
+        
         return self._pi

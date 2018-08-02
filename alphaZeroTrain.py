@@ -6,7 +6,7 @@ import numpy as np
 boardSize = 3
 states = np.zeros([boardSize*boardSize,boardSize*boardSize])
 piZ = np.zeros([boardSize*boardSize,boardSize*boardSize+1])
-playedMoves = set()
+playedMoves = {}
 gamesTrain = 1
 board = tttBoard(boardSize)
 brain = dnNetwork(layers=[boardSize*boardSize,64,32,boardSize*boardSize+1])
@@ -21,6 +21,7 @@ def gameOver(board):
             return 1
     else:
         return 0
+    
 games = 0
 while games < gamesTrain:
     while len(board.legalMoves()) > 0 and not(gameOver(board)):
@@ -29,10 +30,12 @@ while games < gamesTrain:
         #brain.loadModel()
         alphaZeroTTT = alphaZeroMCTS(board,brain)
         pi = alphaZeroTTT.getMCTSMoveProbs()
-        playedMoves.add((state,pi))
+        playedMoves[(state)] = pi
         player = board.currPlayer()
         board.makeMove(np.argmax(pi))
-        print('train labels'+str(pi))
+        board.display()
+        print(board._board)
+        print('train labels',pi)
         if gameOver(board):
             games+=1
             if player == board.winner():
@@ -41,7 +44,8 @@ while games < gamesTrain:
                 z = -1
             break
     ind = 0
-    for state,pi in playedMoves:
+    for state in playedMoves:
+        pi = playedMoves[state]
         #define the training data structure here, 
         #add z to pi to make output vector
         #add states to make input vector
@@ -54,6 +58,3 @@ while games < gamesTrain:
     brain.train(states,piZ)
     #save weights
     brain.saveModel()
-    
-    
-

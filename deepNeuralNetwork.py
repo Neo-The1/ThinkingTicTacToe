@@ -91,9 +91,10 @@ if __name__ == "__main__":
     from tttBoard import tttBoard
     board = tttBoard(3)
     board.makeMove(5)
-    states = np.zeros([9,])
+    states = np.zeros((1,9))
     testNet = dnNetwork(layers=[9,64,32,10])
-    states[1] = board.decodeState(board.getState())
+    states[0,:] = board.decodeState(board.getState())
     print(states)
-    print(testNet.predict(states[1]))
+    print(testNet.predict(states))
+    print(testNet.predict(board.decodeState(board.getState())).flatten())
     

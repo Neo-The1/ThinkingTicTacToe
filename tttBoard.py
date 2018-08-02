@@ -20,9 +20,9 @@ class tttBoard:
         self._1Dsize = n
     
     def decodeState(self,s):
-        state = np.zeros((self._boardSize))
+        state = np.zeros((1,self._boardSize))
         for i in range(self._boardSize):
-            state[i] = s[i]
+            state[0,i] = s[i]
         return state
 
     def currPlayer(self):

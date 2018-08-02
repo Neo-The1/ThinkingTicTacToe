@@ -19,7 +19,7 @@ class alphaZeroMCTS:
         self._Q_sa = {}
         self._W_sa = {}
         self._board = board
-        self._pi = [0]*self._board.getSize()
+        self._pi = [0]*self._board._boardSize
         self._z = None
         self._network = network
         self._maxMoves = 1000
@@ -61,7 +61,7 @@ class alphaZeroMCTS:
             # networkPredict is a list of probabilities of making a move on each square
             # of the board and a last entry {-1, 0, 1} to estimate winner
             else:
-                networkPredict = self._network.predict(self._board.decodeState(s))
+                networkPredict = self._network.predict(self._board.decodeState(s)).flatten()
                 nodeExpanded = True
                 break
         # Update the statistics for this simulation
@@ -95,7 +95,7 @@ class alphaZeroMCTS:
         while games < 5000:
             self.runSimulation()
             games+=1
-        for ii in range(self._board.getSize()):
+        for ii in range(self._board._boardSize):
             if ii in legalMoves:
                 self._pi[ii] = self._N_sa[(s,ii)]
         #normalize pi is tau = 1, convert it to one hot if tau = 0
@@ -103,8 +103,9 @@ class alphaZeroMCTS:
         if tau == 1:
             self._pi = np.divide(self._pi,N)
         if tau == 0:
-            newPi = [0]*self._board.getSize()
-            newPi[(np.argmax(self._pi))] = 1.0
-            self._pi = newPi
-            
+            newPi = [0]*self._board._boardSize
+            newPi[(np.argmax(self._pi))] = 1
+            self._pi = newPi.copy()
+            print(self._pi)
+        #need to return strong for hashability    
         return self._pi

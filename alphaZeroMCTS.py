@@ -92,16 +92,21 @@ class alphaZeroMCTS:
         while games < 5000:
             self.runSimulation()
             games+=1
+            #define new empty list
+        
+        #define new empty list
+        newPi = [0]*self._board._boardSize
         for ii in range(self._board._boardSize):
             if ii in legalMoves:
-                self._pi[ii] = self._N_sa[(s,ii)]
+                newPi[ii] = self._P_sa[(s,ii)]
         #normalize pi is tau = 1, convert it to one hot if tau = 0
-        N = np.sum(self._pi) #total N, needed to normalize
+        N = np.sum(newPi) #total N, needed to normalize
         if tau == 1:
-            self._pi = np.divide(self._pi,N)
-        if tau == 0:
-            newPi = [0]*self._board._boardSize
-            newPi[(np.argmax(self._pi))] = 1
+            newPi = np.divide(newPi,N)
             self._pi = newPi.copy()
+        if tau == 0:
+            newOneHotPi = [0]*self._board._boardSize
+            newOneHotPi[(np.argmax(newPi))] = 1
+            self._pi = newOneHotPi.copy()
         
         return self._pi

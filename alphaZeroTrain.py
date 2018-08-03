@@ -4,10 +4,7 @@ from deepNeuralNetwork import dnNetwork
 import numpy as np
 
 boardSize = 3
-states = np.zeros([boardSize*boardSize,boardSize*boardSize])
-piZ = np.zeros([boardSize*boardSize,boardSize*boardSize+1])
-playedMoves = {}
-gamesTrain = 1
+gamesTrain = 2
 board = tttBoard(boardSize)
 brain = dnNetwork(layers=[boardSize*boardSize,64,32,boardSize*boardSize+1])
 
@@ -24,18 +21,21 @@ def gameOver(board):
     
 games = 0
 while games < gamesTrain:
+    states = np.zeros([boardSize*boardSize,boardSize*boardSize])
+    piZ = np.zeros([boardSize*boardSize,boardSize*boardSize+1])
+    playedMoves = {}
     while len(board.legalMoves()) > 0 and not(gameOver(board)):
         state = board.getState()
         #load saved weights
         #brain.loadModel()
         alphaZeroTTT = alphaZeroMCTS(board,brain)
         pi = alphaZeroTTT.getMCTSMoveProbs()
-        playedMoves[(state)] = pi
+        playedMoves[state] = pi
         player = board.currPlayer()
         board.makeMove(np.argmax(pi))
+        print("pi ", pi)
+        print("move ",np.argmax(pi))
         board.display()
-        print(board._board)
-        print('train labels',pi)
         if gameOver(board):
             games+=1
             if player == board.winner():
@@ -53,8 +53,6 @@ while games < gamesTrain:
         states[ind] = board.decodeState(state)            
         ind +=1
     #train data
-    print(states)
-    print(piZ)
     brain.train(states,piZ)
     #save weights
     brain.saveModel()

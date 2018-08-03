@@ -84,21 +84,17 @@ class alphaZeroMCTS:
         s = self._board.getState()
         # no need to run simulation if there are no real choices
         # so return accordingly
-        if not legalMoves:
-            return None
-        if len(legalMoves) == 1:
-            return legalMoves[0]
         games = 0
         while games < 5000:
             self.runSimulation()
             games+=1
             #define new empty list
-        
+        eps = 0.25
         #define new empty list
         newPi = [0]*self._board._boardSize
         for ii in range(self._board._boardSize):
             if ii in legalMoves:
-                newPi[ii] = self._P_sa[(s,ii)]
+                newPi[ii] = (1-eps)*self._P_sa[(s,ii)] + eps*np.random.rand()
         #normalize pi is tau = 1, convert it to one hot if tau = 0
         N = np.sum(newPi) #total N, needed to normalize
         if tau == 1:
@@ -108,5 +104,11 @@ class alphaZeroMCTS:
             newOneHotPi = [0]*self._board._boardSize
             newOneHotPi[(np.argmax(newPi))] = 1
             self._pi = newOneHotPi.copy()
-        
-        return self._pi
+        if len(self._pi) == self._board._boardSize:
+            return self._pi
+        else:
+            randPi = np.random.randn(9)
+            newOneHotPi[np.argmax(randPi)]=1
+            self._pi = newOneHotPi.copy()
+            print(newOneHotPi)
+            return self._pi

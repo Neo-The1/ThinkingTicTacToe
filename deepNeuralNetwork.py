@@ -1,18 +1,9 @@
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
-import numpy as np
 import tensorflow as tf
-
-# TODO: to be removed from this file. This is being kept here just to test
-# the dnNetwork implementation
-from tensorflow.examples.tutorials.mnist import input_data
-mnist = input_data.read_data_sets('MNIST_data')
-
-# ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-def input(dataset):
-    return dataset.images, dataset.labels.astype(np.int32)
-
+from tensorflow import keras
+import numpy as np
+#from tensorflow.examples.tutorials.mnist import input_data
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 class dnNetwork():
@@ -24,58 +15,86 @@ class dnNetwork():
             first item in the list refers to the size of input layer.
             last item in the list refers to the size of output layer.
         """
+        #currently the code is only for 2 hidden layers, apart from in and out
+        self._saveFile = kwds.get('saveFile')
         self._layerSizes = kwds.get('layers', [])
-        self._optimizer = kwds.get('optimizer', tf.train.AdamOptimizer(1e-4))
-        assert len(self._layerSizes) > 2
-        # placeholder for input features
-        self._featureColumns = [tf.feature_column.numeric_column('x', shape=[28, 28])]
-        """ now initialize the underlying estimator
-        """
-        self._network = tf.estimator.DNNClassifier( feature_columns = self._featureColumns,
-                                                    hidden_units = [layerSize for layerSize in self._layerSizes[1:-1]],
-                                                    optimizer = self._optimizer,
-                                                    n_classes = 10,
-                                                    dropout = 0.1,
-                                                    model_dir = './tmp/mnist_model' )
+        self._layer1 = keras.layers.Dense(self._layerSizes[1],activation='relu')
+        self._layer2 = keras.layers.Dense(self._layerSizes[2],activation='relu')    
+        self._outLayer = keras.layers.Dense(self._layerSizes[-1],activation='softmax')
+        self._inputs = keras.Input(shape=(self._layerSizes[0],)) #returns placeholder
+        x = self._layer1(self._inputs)
+        x = self._layer2(x)
+        self._outputs = self._outLayer(x)
+        self._model = keras.Model(inputs=self._inputs,outputs=self._outputs)
+        self._model.compile(optimizer=tf.train.AdamOptimizer(0.001),
+                      loss=self.loss,
+                      metrics=['accuracy'])
 
-        self._trainInputFn = tf.estimator.inputs.numpy_input_fn( x = {"x": input(mnist.train)[0]},
-                                                                 y = input(mnist.train)[1],
-                                                                 num_epochs = None,
-                                                                 batch_size = 50,
-                                                                 shuffle = True )
-
-        self._testInputFn = tf.estimator.inputs.numpy_input_fn( x = {"x": input(mnist.test)[0]},
-                                                                y = input(mnist.test)[1],
-                                                                num_epochs = 1,
-                                                                shuffle = False )
-
-
-
-    def loadFromFile(self, filename):
+    def loss(self,yTrue,yPred):
+        loss = keras.backend.square(yTrue[-1]-yPred[-1])
+        - keras.backend.dot(keras.backend.transpose(yTrue[0:-1]),keras.backend.log(yPred[0:-1]))
+        return loss
+    
+    def loadModel(self):
         """ Load the network parameters from a file
         """
+        self._model.load_weights('my_model')
         return None
 
-    def saveToFile(self, fileName):
+    def saveModel(self):
         """ Save the network parameters to a file
         """
+        self._model.save_weights('./my_model')
         return None
 
-    def train(self, trainingData):
-        """ Train the network using passed training data
+    def train(self, train_x,train_y):
+        """ Train the network using passed training data as numpy array
         """
-        self._network.train( input_fn = self._trainInputFn, steps = 2000 )
+        self._model.fit(train_x,train_y,batch_size=1,epochs = 1)
+        return None
+    
+    def predict(self,x):
+        """Predict the output, given input
+        """
+        return self._model.predict(x)
 
-    def evaluate(self):
+    def evaluate(self,test_x,test_y):
         """ evaluate accuracy
         """
-        accuracy_score = self._network.evaluate(input_fn=self._testInputFn)["accuracy"]
-        print("\nTest Accuracy: {0:f}%\n".format(accuracy_score*100))
-
+        evalLoss, evalAcc = self._model.evaluate(test_x,test_y)
+        print("Evaluation Accuracy :",evalAcc)
+        return None
+        
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 if __name__ == "__main__":
-    testNetwork = dnNetwork(layers = [784, 256, 10])
-    testNetwork.train(None)
-    testNetwork.evaluate()
-
+#    #testing on mnist data
+#    mnist = input_data.read_data_sets('MNIST_data')
+#    testNetwork = dnNetwork(layers = [784,64,32,10])
+#    train_x = mnist.train.images
+#    train_y = keras.utils.to_categorical(mnist.train.labels)
+#    test_x = mnist.test.images
+#    test_y = keras.utils.to_categorical(mnist.test.labels)
+#    testNetwork.train(train_x,train_y)
+#    print("evaluation of test net")
+#    testNetwork.evaluate(test_x,test_y)
+#    testNetwork.saveModel()
+#    newNetwork = dnNetwork(layers = [784,64,32,10])
+#    newNetwork.loadModel()
+#    predictionsTest = testNetwork.predict(train_x)
+#    predictionsNew = newNetwork.predict(train_x)
+#    print("evaluation of new net")
+#    testNetwork.evaluate(test_x,test_y)
+#    print("Label: ",np.argmax(train_y[1]))
+#    print("test Net Prediction: ",np.argmax(predictionsTest[1]))
+#    print("New Net Prediction: ",np.argmax(predictionsTest[1]))
+    from tttBoard import tttBoard
+    board = tttBoard(3)
+    board.makeMove(5)
+    states = np.zeros((1,9))
+    testNet = dnNetwork(layers=[9,64,32,10])
+    states[0,:] = board.decodeState(board.getState())
+    print(states)
+    print(testNet.predict(states))
+    print(testNet.predict(board.decodeState(board.getState())).flatten())
+    

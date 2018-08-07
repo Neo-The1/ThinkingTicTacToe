@@ -3,10 +3,10 @@ from tttBoard import tttBoard
 from deepNeuralNetwork import dnNetwork
 import numpy as np
 
-boardSize = 3
-gamesTrain = 2
-board = tttBoard(boardSize)
-brain = dnNetwork(layers=[boardSize*boardSize,64,32,boardSize*boardSize+1])
+board1DSize = 3
+gamesTrain = 500
+brain = dnNetwork(inputSize=2*board1DSize*board1DSize+1,
+                  outputSize=board1DSize*board1DSize+1)
 
 def gameOver(board):
     if (board.winner()):
@@ -21,13 +21,13 @@ def gameOver(board):
     
 games = 0
 while games < gamesTrain:
-    states = np.zeros([boardSize*boardSize,boardSize*boardSize])
-    piZ = np.zeros([boardSize*boardSize,boardSize*boardSize+1])
     playedMoves = {}
+    nMoves = 0
+    board = tttBoard(board1DSize)
     while len(board.legalMoves()) > 0 and not(gameOver(board)):
         state = board.getState()
         #load saved weights
-        #brain.loadModel()
+        brain.loadModel()
         alphaZeroTTT = alphaZeroMCTS(board,brain)
         pi = alphaZeroTTT.getMCTSMoveProbs()
         playedMoves[state] = pi
@@ -36,23 +36,31 @@ while games < gamesTrain:
         print("pi ", pi)
         print("move ",np.argmax(pi))
         board.display()
+        nMoves+=1
         if gameOver(board):
             games+=1
             if player == board.winner():
                 z = 1
+            elif player== -1:
+                z = 0
             else:
-                z = -1
+                z = 1
             break
     ind = 0
     for state in playedMoves:
         pi = playedMoves[state]
+        piLabel = np.zeros((nMoves,board1DSize*board1DSize))
+        states = np.zeros((nMoves,2*board1DSize*board1DSize+1))
+        Z = np.zeros((nMoves))
         #define the training data structure here, 
         #add z to pi to make output vector
         #add states to make input vector
-        piZ[ind] = np.append(np.array(np.float32(pi)),z)
-        states[ind] = board.decodeState(state)            
+        piLabel[ind] = np.float32(pi)
+        states[ind] = np.float32(board.decodeState(state))
+        Z[ind] = z
         ind +=1
+    print("piLabel",piLabel)
     #train data
-    brain.train(states,piZ)
+    brain.train(states,[piLabel,Z])
     #save weights
     brain.saveModel()

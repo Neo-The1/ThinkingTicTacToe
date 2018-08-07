@@ -20,9 +20,19 @@ class tttBoard:
         self._1Dsize = n
     
     def decodeState(self,s):
-        state = np.zeros((1,self._boardSize))
+        """takes state list of array boardSize and returns
+        a list of length 2*boardSize + 1 elements
+        first boardSize represent player1's positions
+        second boardSize represent player2's positions
+        last element is currentPlayer
+        """
+        state = np.zeros((1,2*self._boardSize+1))
+        state[0,-1] = self.currPlayer()
         for i in range(self._boardSize):
-            state[0,i] = s[i]
+            if s[i] == '1':
+                state[0,i] = 1
+            elif s[i] == '2':
+                state[0,self._boardSize+i] = 1                
         return state
 
     def currPlayer(self):
@@ -77,7 +87,7 @@ class tttBoard:
             self._history.append('O'+str(move))
         else:
             self._history.append('X'+str(move))
-        return self._state
+        return self._board
 
     def getSize(self):
         return self._1Dsize

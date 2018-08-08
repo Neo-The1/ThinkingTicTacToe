@@ -47,7 +47,8 @@ class tttScene(QGraphicsScene):
         if ev.button() == QtCore.Qt.LeftButton:
             pos = ev.scenePos()
             cellID = self.cellAt(pos.x(), pos.y())
-            self.makeMove(cellID)
+            if not self.makeMove(cellID):
+                return
             self.update()
             # follows engine's play
             mc = monteCarlo(self._board)
@@ -58,7 +59,7 @@ class tttScene(QGraphicsScene):
            move not in self._board.legalMoves() or\
            self._board.winner() > 0:
            # illegal move
-           return
+           return False
 
         image = None
         sideToMove = self._board.currPlayer()
@@ -76,6 +77,7 @@ class tttScene(QGraphicsScene):
         cellSize = self.cellSize()
         playerIcon.setPos(int(cc[0] - 0.25 * cellSize), int(cc[1] - 0.25 * cellSize))
         self.addItem(playerIcon)
+        return True
 
     def drawCells(self):
         cellSize = self.cellSize()

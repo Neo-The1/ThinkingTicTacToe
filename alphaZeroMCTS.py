@@ -90,7 +90,7 @@ class alphaZeroMCTS:
         while games < 500:
             self.runSimulation()
             games+=1
-        eps = 0.25
+        eps = 0.2
         #define new empty list
         newPi = [0]*self._board._boardSize
         for ii in range(self._board._boardSize):

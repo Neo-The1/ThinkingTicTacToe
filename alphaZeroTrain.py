@@ -26,8 +26,13 @@ while games < gamesTrain:
     board = tttBoard(board1DSize)
     while len(board.legalMoves()) > 0 and not(gameOver(board)):
         state = board.getState()
+        #if new run, don't load old model, else load old model
+        if games < 1:
+            pass
+        else:
         #load saved weights
-        brain.loadModel()
+            brain.loadModel()
+            
         alphaZeroTTT = alphaZeroMCTS(board,brain)
         pi = alphaZeroTTT.getMCTSMoveProbs()
         playedMoves[state] = pi
@@ -44,22 +49,22 @@ while games < gamesTrain:
             elif player== -1:
                 z = 0
             else:
-                z = 1
+                z = -1
             break
     ind = 0
+    piLabel = np.zeros((nMoves,board1DSize*board1DSize))
+    states = np.zeros((nMoves,2*board1DSize*board1DSize+1))
+    Z = np.zeros((nMoves))
     for state in playedMoves:
         pi = playedMoves[state]
-        piLabel = np.zeros((nMoves,board1DSize*board1DSize))
-        states = np.zeros((nMoves,2*board1DSize*board1DSize+1))
-        Z = np.zeros((nMoves))
         #define the training data structure here, 
         #add z to pi to make output vector
         #add states to make input vector
-        piLabel[ind] = np.float32(pi)
+        piLabel[ind] = pi
         states[ind] = np.float32(board.decodeState(state))
         Z[ind] = z
         ind +=1
-    print("piLabel",piLabel)
+    print(games)
     #train data
     brain.train(states,[piLabel,Z])
     #save weights

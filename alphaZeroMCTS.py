@@ -90,12 +90,18 @@ class alphaZeroMCTS:
         while games < 500:
             self.runSimulation()
             games+=1
-        eps = 0.2
+        eps = 0.25
         #define new empty list
         newPi = [0]*self._board._boardSize
+        #get Dirichlet distribution noise term
+        #Check wikipedia page for Dirichlet distribution for algo
+        dirAlpha = 0.3 #parameter for Dirichlet dist.
+        params = [dirAlpha]*self._board._boardSize
+        sample = [np.random.gamma(a,1) for a in params]
+        dirSample = [v/sum(sample) for v in sample]
         for ii in range(self._board._boardSize):
             if ii in legalMoves:
-                newPi[ii] = (1-eps)*self._P_sa[(s,ii)] + eps*np.random.rand()
+                newPi[ii] = (1-eps)*self._P_sa[(s,ii)] + eps*dirSample[ii]
         #normalize pi is tau = 1, convert it to one hot if tau = 0
         N = np.sum(newPi) #total N, needed to normalize
         if tau == 1:

@@ -24,15 +24,14 @@ while games < gamesTrain:
     playedMoves = {}
     nMoves = 0
     board = tttBoard(board1DSize)
-    while len(board.legalMoves()) > 0 and not(gameOver(board)):
-        state = board.getState()
-        #if new run, don't load old model, else load old model
-        if games < 1:
-            pass
-        else:
+    #if new run, don't load old model, else load old model
+    if games < 1:
+        pass
+    else:
         #load saved weights
-            brain.loadModel()
-            
+        brain.loadModel()
+    while len(board.legalMoves()) > 0 and not(gameOver(board)):
+        state = board.getState()            
         alphaZeroTTT = alphaZeroMCTS(board,brain)
         pi = alphaZeroTTT.getMCTSMoveProbs()
         playedMoves[state] = pi

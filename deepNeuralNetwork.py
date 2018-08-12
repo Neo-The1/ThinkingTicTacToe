@@ -10,29 +10,36 @@ class dnNetwork():
 
     """ class representing a deep neural network with multiple hidden layers
     """
-    def __init__(self, *args, **kwds):
+    def __init__(self,inputSize,outputSize, *args, **kwds):
         """ a list of dnn layer size's including input and output layer.
             first item in the list refers to the size of input layer.
             last item in the list refers to the size of output layer.
         """
         #currently the code is only for 2 hidden layers, apart from in and out
         self._saveFile = kwds.get('saveFile')
-        self._layerSizes = kwds.get('layers', [])
-        self._layer1 = keras.layers.Dense(self._layerSizes[1],activation='relu')
-        self._layer2 = keras.layers.Dense(self._layerSizes[2],activation='relu')    
-        self._outLayer = keras.layers.Dense(self._layerSizes[-1],activation='softmax')
-        self._inputs = keras.Input(shape=(self._layerSizes[0],)) #returns placeholder
+        self._inputSize = inputSize
+        self._outputSize= outputSize
+        self._layer1 = keras.layers.Dense(64,activation='relu')
+        self._layer2 = keras.layers.Dense(32,activation='relu')    
+        self._piLayer = keras.layers.Dense(self._outputSize-1,activation='relu')
+        self._zLayer = keras.layers.Dense(1,activation='tanh')
+        self._inputs = keras.Input(shape=(self._inputSize,)) #returns placeholder
         x = self._layer1(self._inputs)
         x = self._layer2(x)
-        self._outputs = self._outLayer(x)
-        self._model = keras.Model(inputs=self._inputs,outputs=self._outputs)
+        self._outPi = self._piLayer(x)
+        self._outZ = self._zLayer(x)
+        self._model = keras.Model(inputs=self._inputs,outputs=[self._outPi,self._outZ])
         self._model.compile(optimizer=tf.train.AdamOptimizer(0.001),
                       loss=self.loss,
                       metrics=['accuracy'])
 
     def loss(self,yTrue,yPred):
-        loss = keras.backend.square(yTrue[-1]-yPred[-1])
-        - keras.backend.dot(keras.backend.transpose(yTrue[0:-1]),keras.backend.log(yPred[0:-1]))
+        z = keras.backend.flatten(yTrue[-1])
+        v = keras.backend.flatten(yPred[-1])
+        pi = keras.backend.flatten(yTrue[0])
+        p = keras.backend.flatten(yPred[0])
+        loss = keras.backend.square(z-v)
+        - keras.backend.sum(keras.backend.transpose(pi)*keras.backend.log(p),axis=-1,keepdims=True)
         return loss
     
     def loadModel(self):
@@ -50,7 +57,7 @@ class dnNetwork():
     def train(self, train_x,train_y):
         """ Train the network using passed training data as numpy array
         """
-        self._model.fit(train_x,train_y,batch_size=1,epochs = 1)
+        self._model.fit(train_x,train_y,batch_size=1,epochs = 10)
         return None
     
     def predict(self,x):
@@ -91,10 +98,11 @@ if __name__ == "__main__":
     from tttBoard import tttBoard
     board = tttBoard(3)
     board.makeMove(5)
-    states = np.zeros((1,9))
-    testNet = dnNetwork(layers=[9,64,32,10])
-    states[0,:] = board.decodeState(board.getState())
-    print(states)
-    print(testNet.predict(states))
-    print(testNet.predict(board.decodeState(board.getState())).flatten())
-    
+    states = np.zeros((1,19))
+    testNet = dnNetwork(19,10)
+#    states[0,:] = board.decodeState(board.getState())
+#    print(states)
+#    print(testNet.predict(states))
+    result = testNet.predict(board.decodeState(board.getState()))
+    print(result[0].flatten())
+    print(result[1].flatten())

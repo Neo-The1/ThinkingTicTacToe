@@ -58,7 +58,9 @@ class alphaZeroMCTS:
             # networkPredict is a list of probabilities of making a move on each square
             # of the board and a last entry {-1, 0, 1} to estimate winner
             else:
-                networkPredict = self._network.predict(self._board.decodeState(s)).flatten()
+                networkPredict = self._network.predict(self._board.decodeState(s))
+                netPredictPi = networkPredict[0].flatten()
+                netPredictZ = networkPredict[1].flatten()
                 nodeExpanded = True
                 break
         # Update the statistics for this simulation
@@ -67,11 +69,11 @@ class alphaZeroMCTS:
                 self._N_sa[(s,move)] = 0
                 self._Q_sa[(s,move)] = 0
                 self._W_sa[(s,move)] = 0
-                self._P_sa[(s, move)] = networkPredict[move]
+                self._P_sa[(s, move)] = netPredictPi[move]
 
         for s, move in visitedActions:
             self._N_sa[(s, move)] += 1
-            self._W_sa[(s, move)] +=networkPredict[-1] #winner is last entry in network output
+            self._W_sa[(s, move)] +=netPredictZ[0] #winner
             self._Q_sa[(s, move)] = self._W_sa[(s, move)]/self._N_sa[(s, move)]
             
     def getMCTSMoveProbs(self,tau=0):
@@ -85,11 +87,10 @@ class alphaZeroMCTS:
         # no need to run simulation if there are no real choices
         # so return accordingly
         games = 0
-        while games < 5000:
+        while games < 500:
             self.runSimulation()
             games+=1
-            #define new empty list
-        eps = 0.25
+        eps = 0.2
         #define new empty list
         newPi = [0]*self._board._boardSize
         for ii in range(self._board._boardSize):
@@ -104,11 +105,4 @@ class alphaZeroMCTS:
             newOneHotPi = [0]*self._board._boardSize
             newOneHotPi[(np.argmax(newPi))] = 1
             self._pi = newOneHotPi.copy()
-        if len(self._pi) == self._board._boardSize:
-            return self._pi
-        else:
-            randPi = np.random.randn(9)
-            newOneHotPi[np.argmax(randPi)]=1
-            self._pi = newOneHotPi.copy()
-            print(newOneHotPi)
             return self._pi

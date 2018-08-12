@@ -2,10 +2,12 @@ from alphaZeroMCTS import alphaZeroMCTS
 from tttBoard import tttBoard
 from deepNeuralNetwork import dnNetwork
 import numpy as np
+import time
 
-boardSize = 3
-gamesTrain = 10000
-brain = dnNetwork(layers=[boardSize*boardSize,64,32,boardSize*boardSize+1])
+board1DSize = 3
+gamesTrain = 100
+brain = dnNetwork(inputSize=2*board1DSize*board1DSize+1,
+                  outputSize=board1DSize*board1DSize+1)
 
 def gameOver(board):
     if (board.winner()):
@@ -17,44 +19,54 @@ def gameOver(board):
             return 1
     else:
         return 0
-    
+
 games = 0
+ts = time.time()
 while games < gamesTrain:
-    board = tttBoard(boardSize)
-    states = np.zeros([boardSize*boardSize,boardSize*boardSize])
-    piZ = np.zeros([boardSize*boardSize,boardSize*boardSize+1])
-    playedMoves = {}
-    while len(board.legalMoves()) > 0 and not(gameOver(board)):
-        state = board.getState()
-        #load saved weights
+    #if new run, don't load old model, else load old model
+    if games > 0:
         brain.loadModel()
-        alphaZeroTTT = alphaZeroMCTS(board,brain)
+
+    playedMoves = []
+    nMoves = 0
+    board = tttBoard(board1DSize)
+    alphaZeroTTT = alphaZeroMCTS(board, brain)
+    while len(board.legalMoves()) > 0:
+        state = board.getState()
         pi = alphaZeroTTT.getMCTSMoveProbs()
-        playedMoves[state] = pi
+        playedMoves.append((state, pi))
         player = board.currPlayer()
-        board.makeMove(np.argmax(pi))
+        move = np.argmax(pi)
+        board.makeMove(move)
         print("pi ", pi)
-        print("move ",np.argmax(pi))
-        print("board after move")
+        print("move ", move)
         board.display()
+        nMoves+=1
         if gameOver(board):
+            games+=1
             if player == board.winner():
                 z = 1
+            elif player== -1:
+                z = 0
             else:
                 z = -1
             break
-    games+=1
-    print("games played :",games,"/",gamesTrain)
     ind = 0
-    for state in playedMoves:
-        pi = playedMoves[state]
-        #define the training data structure here, 
+    piLabel = np.zeros((nMoves,board1DSize*board1DSize))
+    states = np.zeros((nMoves,2*board1DSize*board1DSize+1))
+    Z = np.zeros((nMoves))
+    for state, pi in playedMoves:
+        #define the training data structure here,
         #add z to pi to make output vector
         #add states to make input vector
-        piZ[ind] = np.append(np.array(np.float32(pi)),z)
-        states[ind] = board.decodeState(state)            
+        piLabel[ind] = pi
+        states[ind] = np.float32(board.decodeState(state))
+        Z[ind] = z
         ind +=1
+    print(games)
     #train data
-    brain.train(states,piZ)
+    brain.train(states,[piLabel,Z])
     #save weights
     brain.saveModel()
+te = time.time()
+print("took " + str(te-ts) + " to train on " + str(gamesTrain) + " games")

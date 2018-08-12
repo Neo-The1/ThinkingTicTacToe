@@ -30,9 +30,9 @@ while games < gamesTrain:
     playedMoves = []
     nMoves = 0
     board = tttBoard(board1DSize)
+    alphaZeroTTT = alphaZeroMCTS(board, brain)
     while len(board.legalMoves()) > 0:
         state = board.getState()
-        alphaZeroTTT = alphaZeroMCTS(board,brain)
         pi = alphaZeroTTT.getMCTSMoveProbs()
         playedMoves.append((state, pi))
         player = board.currPlayer()

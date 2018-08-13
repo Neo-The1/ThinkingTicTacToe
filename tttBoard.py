@@ -82,7 +82,6 @@ class tttBoard:
     # turn it is. After making the move update the side to
     # make next move
     def makeMove(self, move):
-        assert(move in self.legalMoves())
         self._board[move] = self.currPlayer()
         if self.currPlayer() == 1:
             self._history.append('O'+str(move))

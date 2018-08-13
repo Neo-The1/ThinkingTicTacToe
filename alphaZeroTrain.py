@@ -4,7 +4,7 @@ from deepNeuralNetwork import dnNetwork
 import numpy as np
 
 board1DSize = 3
-gamesTrain = 500
+gamesTrain = 100
 brain = dnNetwork(inputSize=2*board1DSize*board1DSize+1,
                   outputSize=board1DSize*board1DSize+1)
 

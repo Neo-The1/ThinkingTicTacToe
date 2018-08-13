@@ -52,7 +52,9 @@ class tttScene(QGraphicsScene):
             self.update()
             # follows engine's play
             mc = monteCarlo(self._board)
-            self.makeMove(mc.getMove())
+            mcMove = mc.getMove()
+            if mcMove != None:
+                self.makeMove(mcMove)
 
     def makeMove(self, move):
         if move >= self._board._boardSize       or\

@@ -21,12 +21,12 @@ class alphaZeroMCTS:
         self._network = network
         self._maxMoves = 1000
 
-    def ucb(self, s, a):
+    def ucb(self, s, a, cumulativeVisitCount):
         """ returns upper confidence bound for choosing move a from board
             position s
         """
         K = 1.0
-        return self._Q_sa[(s, a)] + K * self._P[(s, a)] / ( 1.0 + self._N_sa[(s, a)] )
+        return self._Q_sa[(s, a)] + K * self._P[(s, a)] * np.sqrt(cumulativeVisitCount) / ( 1.0 + self._N_sa[(s, a)] )
 
     def dirichletNoise(self, param, count):
         """ random number generator fitting to dirichlet noise
@@ -54,7 +54,8 @@ class alphaZeroMCTS:
             # if stats exist for all legal moves
             # use the UCB formula
             if all(self._N_sa.get((s, a)) for a in legalMoves):
-                ucbValue, move= max((self.ucb(s, a), a) for a in legalMoves)
+                cumulativeVisitCount = sum([self._N_sa.get((s, b), 0) for b in range(self._board._boardsize)])
+                ucbValue, move= max((self.ucb(s, a, cumulativeVisitCount), a) for a in legalMoves)
                 visitedActions.add((s, move))
                 simulationBoard.makeMove(move)
                 winner = simulationBoard.winner()

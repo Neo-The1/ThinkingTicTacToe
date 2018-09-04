@@ -57,7 +57,7 @@ class dnNetwork():
     def train(self, train_x,train_y):
         """ Train the network using passed training data as numpy array
         """
-        self._model.fit(train_x,train_y,batch_size=1,epochs = 10)
+        self._model.fit(train_x,train_y,batch_size=8,epochs = 10)
         return None
     
     def predict(self,x):

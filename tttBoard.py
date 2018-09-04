@@ -18,21 +18,28 @@ class tttBoard:
         self._history = []
         self._boardSize = n*n
         self._1Dsize = n
-    
-    def decodeState(self,s):
-        """takes state list of array boardSize and returns
-        a list of length 2*boardSize + 1 elements
-        first boardSize represent player1's positions
-        second boardSize represent player2's positions
-        last element is currentPlayer
+
+    def decodeState(self, s):
+        """ takes state list of array boardSize and returns
+            a list of length 2*boardSize + 1 elements
+            first boardSize represent O's position
+            second boardSize represent X's position
+            last element is player to make next move
         """
-        state = np.zeros((1,2*self._boardSize+1))
-        state[0,-1] = self.currPlayer()
+        state = np.zeros((1, 2 * self._boardSize + 1))
+        numOccupiedSq = 0;
         for i in range(self._boardSize):
             if s[i] == '1':
-                state[0,i] = 1
+                state[0, i] = 1
+                numOccupiedSq += 1;
             elif s[i] == '2':
-                state[0,self._boardSize+i] = 1                
+                state[0, self._boardSize+i] = 1
+                numOccupiedSq += 1;
+        # every even's turn is O's move
+        if numOccupiedSq % 2 == 0:
+            state[0, -1] = 1
+        else:
+            state[0, -1] = 2
         return state
 
     def currPlayer(self):
@@ -82,7 +89,7 @@ class tttBoard:
     # turn it is. After making the move update the side to
     # make next move
     def makeMove(self, move):
-        assert(move in self.legalMoves())
+        assert( move in self.legalMoves())
         self._board[move] = self.currPlayer()
         if self.currPlayer() == 1:
             self._history.append('O'+str(move))

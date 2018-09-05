@@ -120,8 +120,9 @@ class tttGui:
         self._mainWindow.setWindowTitle('Thinking Tic-Tac-Toe')
 
         # display log
+        logo = QPixmap("res/tttLogo.png");
         self._displayLabel = QLabel(self._mainWindow)
-        self._displayLabel.setText("TODO:\n Area to display Messages")
+        self._displayLabel.setPixmap(logo);
 
         # create a layout
         layout = QHBoxLayout()

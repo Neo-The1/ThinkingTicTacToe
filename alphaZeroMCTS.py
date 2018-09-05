@@ -53,8 +53,8 @@ class alphaZeroMCTS:
                 break
             # if stats exist for all legal moves
             # use the UCB formula
-            if all(self._N_sa.get((s, a)) for a in legalMoves):
-                cumulativeVisitCount = sum([self._N_sa.get((s, b), 0) for b in range(self._board._boardsize)])
+            if all((s, a) in self._N_sa for a in legalMoves):
+                cumulativeVisitCount = sum([self._N_sa.get((s, b), 0) for b in range(self._board._boardSize)])
                 ucbValue, move= max((self.ucb(s, a, cumulativeVisitCount), a) for a in legalMoves)
                 visitedActions.add((s, move))
                 simulationBoard.makeMove(move)

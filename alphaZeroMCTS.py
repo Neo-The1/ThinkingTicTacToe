@@ -85,7 +85,15 @@ class alphaZeroMCTS:
 
         for s, move in visitedActions:
             self._N_sa[(s, move)] += 1
-            self._W_sa[(s, move)] +=netPredictZ[0] #winner
+            if nodeExpanded:  # network predicted winner
+                self._W_sa[(s, move)] += netPredictZ[0]
+            else: # true winner
+                #TODO: I am not sure if W should be updated relative to whose move is it or absolutely
+                # doing absolutely here. -1 if O wins 1 if X wins 0 if a draw
+                if winner == 1:
+                    self._W_sa[(s, move)] += -1
+                elif winner == 2:
+                    self._W_sa[(s, move)] += 1
             self._Q_sa[(s, move)] = self._W_sa[(s, move)]/self._N_sa[(s, move)]
 
     def getMCTSMoveProbs(self,tau=0):

@@ -26,7 +26,7 @@ class alphaZeroMCTS:
             position s
         """
         K = 1.0
-        return self._Q_sa[(s, a)] + K * self._P[(s, a)] * np.sqrt(cumulativeVisitCount) / ( 1.0 + self._N_sa[(s, a)] )
+        return self._Q_sa[(s, a)] + K * self._P_sa[(s, a)] * np.sqrt(cumulativeVisitCount) / ( 1.0 + self._N_sa[(s, a)] )
 
     def dirichletNoise(self, param, count):
         """ random number generator fitting to dirichlet noise

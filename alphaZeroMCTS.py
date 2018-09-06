@@ -21,12 +21,12 @@ class alphaZeroMCTS:
         self._network = network
         self._maxMoves = 1000
 
-    def ucb(self, s, a):
+    def ucb(self, s, a, cumulativeVisitCount):
         """ returns upper confidence bound for choosing move a from board
             position s
         """
         K = 1.0
-        return self._Q_sa[(s, a)] + K * self._P[(s, a)] / ( 1.0 + self._N_sa[(s, a)] )
+        return self._Q_sa[(s, a)] + K * self._P_sa[(s, a)] * np.sqrt(cumulativeVisitCount) / ( 1.0 + self._N_sa[(s, a)] )
 
     def dirichletNoise(self, param, count):
         """ random number generator fitting to dirichlet noise
@@ -53,8 +53,9 @@ class alphaZeroMCTS:
                 break
             # if stats exist for all legal moves
             # use the UCB formula
-            if all(self._N_sa.get((s, a)) for a in legalMoves):
-                ucbValue, move= max((self.ucb(s, a), a) for a in legalMoves)
+            if all((s, a) in self._N_sa for a in legalMoves):
+                cumulativeVisitCount = sum([self._N_sa.get((s, b), 0) for b in range(self._board._boardSize)])
+                ucbValue, move= max((self.ucb(s, a, cumulativeVisitCount), a) for a in legalMoves)
                 visitedActions.add((s, move))
                 simulationBoard.makeMove(move)
                 winner = simulationBoard.winner()
@@ -86,7 +87,15 @@ class alphaZeroMCTS:
             print(visitedActions)
             print("IN")
             self._N_sa[(s, move)] += 1
-            self._W_sa[(s, move)] +=netPredictZ[0] #winner
+            if nodeExpanded:  # network predicted winner
+                self._W_sa[(s, move)] += netPredictZ[0]
+            else: # true winner
+                #TODO: I am not sure if W should be updated relative to whose move is it or absolutely
+                # doing absolutely here. -1 if O wins 1 if X wins 0 if a draw
+                if winner == 1:
+                    self._W_sa[(s, move)] += -1
+                elif winner == 2:
+                    self._W_sa[(s, move)] += 1
             self._Q_sa[(s, move)] = self._W_sa[(s, move)]/self._N_sa[(s, move)]
 
     def getMCTSMoveProbs(self,tau=0):

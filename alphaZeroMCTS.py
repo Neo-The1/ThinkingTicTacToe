@@ -82,8 +82,10 @@ class alphaZeroMCTS:
                 self._W_sa[(s,move)] = 0
                 self._P_sa[(s, move)] = (1. - eps) * netPredictPi[move] + eps * dnoise[moveIndex]
                 moveIndex += 1
-
+        print(visitedActions)
         for s, move in visitedActions:
+            print(visitedActions)
+            print("IN")
             self._N_sa[(s, move)] += 1
             if nodeExpanded:  # network predicted winner
                 self._W_sa[(s, move)] += netPredictZ[0]
@@ -125,4 +127,3 @@ class alphaZeroMCTS:
             newOneHotPi[(np.argmax(newPi))] = 1
             self._pi = newOneHotPi.copy()
             return self._pi
-

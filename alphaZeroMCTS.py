@@ -2,6 +2,7 @@
 # -----------------------------------------------------------------------------
 import copy
 import numpy as np
+
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 class alphaZeroMCTS:
@@ -127,3 +128,44 @@ class alphaZeroMCTS:
             newOneHotPi[(np.argmax(newPi))] = 1
             self._pi = newOneHotPi.copy()
             return self._pi
+
+    def logSimulationStats(self, board):
+        """ treating board as node, prints stats for leaves emanating from it
+            formatting is done in each leaf cell as shown
+            Q and P are printed in format %.2f hence are 4 character wide
+            +-------+
+            |   W   |
+            | Q - P |
+            |   N   |
+            +-------+
+            height = 5
+        """
+        s = board.getState()
+        lenN = max([len(str(self._N_sa[(s, a)])) for a in board.legalMoves()])
+        lenhyp = 1 + 4 + 1 + lenN + 1 + 4 + 1
+        atomicHeader = '+' + lenhyp * '-'
+        for cellRow in range(board.getSize()):
+            print(board.getSize() * atomicHeader + '+')
+            wrow  = ''
+            qprow = ''
+            nrow  = ''
+            for cellCol in range(board.getSize()):
+                cellID = cellRow * board.getSize() + cellCol
+                if cellID not in board.legalMoves():
+                    # occupied square
+                    wrow  += "|      {0:^{wwidth}}      ".format('', wwidth = lenN)
+                    if board.playerAt(cellID) == 1:
+                        qprow += "| {0:4} {OorX:^{nwidth}} {0:4} ".format(' ', ' ', OorX='O', nwidth = lenN)
+                    else:
+                        assert(board.playerAt(cellID) == 2)
+                        qprow += "| {0:4} {OorX:^{nwidth}} {0:4} ".format(' ', ' ', OorX='X', nwidth = lenN)
+                    nrow  += "|      {0:^{nwidth}}      ".format('', nwidth = lenN)
+                else:
+                    wrow  += "|      {0:^{wwidth}}      ".format(int(self._W_sa[(s, cellID)]), wwidth = lenN)
+                    qprow += "| {0:.2f} {den:{nwidth}} {0:.2f} ".format(self._Q_sa[(s, cellID)], self._P_sa[(s, cellID)], den = lenN * '-', nwidth = lenN)
+                    nrow += "|      {0:^{nwidth}}      ".format(self._N_sa[(s, cellID)], nwidth = lenN)
+            print(wrow + '|')
+            print(qprow + '|')
+            print(nrow + '|')
+        print(board.getSize() * atomicHeader + '+')
+

@@ -97,6 +97,12 @@ class tttBoard:
             self._history.append('X'+str(move))
         return self._board
 
+    def playerAt(self, cell):
+        """ returns id of player occupying cell
+        """
+        assert(cell >= 0 and cell < self.getSize() * self.getSize())
+        return self._board[cell]
+
     def getSize(self):
         return self._1Dsize
 

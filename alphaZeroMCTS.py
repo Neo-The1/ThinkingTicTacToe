@@ -2,7 +2,7 @@
 # -----------------------------------------------------------------------------
 import copy
 import numpy as np
-
+from random import choice
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 class alphaZeroMCTS:
@@ -35,6 +35,17 @@ class alphaZeroMCTS:
          """
         sample = [np.random.gamma(param, 1) for ii in range(count)]
         return [v / sum(sample) for v in sample]
+    
+    def initializeNode(self,s,legalMoves,pi):
+        eps    = 0.2
+        dnoise = self.dirichletNoise(0.03, len(legalMoves))
+        moveIndex = 0
+        for move in legalMoves:
+            self._N_sa[(s,move)] = 0
+            self._Q_sa[(s,move)] = 0
+            self._W_sa[(s,move)] = 0
+            self._P_sa[(s, move)] = (1. - eps) * pi[move] + eps * dnoise[moveIndex]
+            moveIndex += 1
 
     def runSimulation(self):
         """ runs a monte carlo tree search simulation and updates search
@@ -61,11 +72,8 @@ class alphaZeroMCTS:
                 for a in legalMoves)
                 visitedActions.add((s, move))
                 simulationBoard.makeMove(move)
-                simulationBoard.display()
                 winner = simulationBoard.winner()
                 s = simulationBoard.getState()
-                if winner:
-                    break
             # use neural network to predict this leaf node
             # networkPredict is a list of probabilities of making a move on each square
             # of the board and a last entry {-1, 0, 1} to estimate winner
@@ -73,31 +81,32 @@ class alphaZeroMCTS:
                 networkPredict = self._network.predict(self._board.decodeState(s))
                 netPredictPi = networkPredict[0].flatten()
                 netPredictZ = networkPredict[1].flatten()
+                move = np.argmax(netPredictPi)
+                #If move is not legal, play randomly
+                if move not in legalMoves:
+                    move = choice(legalMoves)
+                visitedActions.add((s, move))
+                self.initializeNode(s,legalMoves,netPredictPi)
+                simulationBoard.makeMove(move)
+                winner = simulationBoard.winner()
+                s = simulationBoard.getState()
                 nodeExpanded = True
-                print("IN")
-
-            # Update the statistics for this simulation
-            if  nodeExpanded:
-                eps    = 0.25
-                dnoise = self.dirichletNoise(0.03, len(legalMoves))
-                moveIndex = 0
-                for move in legalMoves:
-                    self._N_sa[(s,move)] = 0
-                    self._Q_sa[(s,move)] = 0
-                    self._W_sa[(s,move)] = 0
-                    self._P_sa[(s, move)] = (1. - eps) * netPredictPi[move] + eps * dnoise[moveIndex]
-                    moveIndex += 1
+                break
+            
+            if winner:
+                    break
+                
         for s, move in visitedActions:
             self._N_sa[(s, move)] += 1
             if nodeExpanded:  # network predicted winner
                 self._W_sa[(s, move)] += netPredictZ[0]
             else: # true winner
-                #TODO: I am not sure if W should be updated relative to whose move is it or absolutely
-                # doing absolutely here. -1 if O wins 1 if X wins 0 if a draw
+                #After last move
                 if winner == 1:
                     self._W_sa[(s, move)] += -1
                 elif winner == 2:
                     self._W_sa[(s, move)] += 1
+                
             self._Q_sa[(s, move)] = self._W_sa[(s, move)]/self._N_sa[(s, move)]
 
     def getMCTSMoveProbs(self,tau=0):
@@ -111,7 +120,7 @@ class alphaZeroMCTS:
         # no need to run simulation if there are no real choices
         # so return accordingly
         games = 0
-        while games < 1:
+        while games < 500:
             self.runSimulation()
             games+=1
         #define new empty list

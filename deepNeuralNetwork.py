@@ -32,6 +32,7 @@ class dnNetwork():
         self._model.compile(optimizer=tf.train.AdamOptimizer(0.001),
                       loss=self.loss,
                       metrics=['accuracy'])
+        self._epochSize = 20
 
     def loss(self,yTrue,yPred):
         z = keras.backend.flatten(yTrue[-1])
@@ -57,7 +58,7 @@ class dnNetwork():
     def train(self, train_x,train_y):
         """ Train the network using passed training data as numpy array
         """
-        self._model.fit(train_x,train_y,batch_size=8,epochs = 10)
+        self._model.fit(train_x,train_y,batch_size=8,epochs = self._epochSize)
         return None
     
     def predict(self,x):

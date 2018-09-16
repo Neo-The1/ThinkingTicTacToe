@@ -4,7 +4,8 @@ from deepNeuralNetwork import dnNetwork
 import numpy as np
 
 board1DSize = 3
-gamesTrain = 1
+gamesTrainBatch = 100
+totalBatches = 50
 brain = dnNetwork(inputSize=2*board1DSize*board1DSize+1,
                   outputSize=board1DSize*board1DSize+1)
 
@@ -25,7 +26,6 @@ def playGame(brain,TotalGames):
     allPiLabels = []
     allZ = []
     while games < TotalGames:
-        print(games)
         playedMoves = {}
         board = tttBoard(board1DSize)
         nMoves = 0
@@ -73,9 +73,12 @@ def playGame(brain,TotalGames):
     allZ = np.concatenate(allZ)    
     return (allStates, allPiLabels, allZ)
     
-(inp,pi,z) = playGame(brain,gamesTrain)
-#print("inp",inp)
-#print("pi",pi)
-#print("z",z)
-#brain.train(inp,[pi,z])
-#brain.saveModel()
+for ii in range(totalBatches):
+    print(ii)
+    brain.loadModel()
+    (inp,pi,z) = playGame(brain,gamesTrainBatch)
+    #print("inp",inp)
+    #print("pi",pi)
+    #print("z",z)
+    brain.train(inp,[pi,z])
+    brain.saveModel()

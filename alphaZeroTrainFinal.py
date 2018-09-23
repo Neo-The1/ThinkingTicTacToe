@@ -1,12 +1,12 @@
 from alphaZeroMCTS import alphaZeroMCTS
 from tttBoard import tttBoard
-from deepNeuralNetwork import dnNetwork
+from convNeuralNetwork import cnNetwork
 import numpy as np
 
 board1DSize = 3
 gamesTrainBatch = 100
 totalBatches = 50
-brain = dnNetwork(inputSize=2*board1DSize*board1DSize+1,
+brain = cnNetwork(inputShape=(board1DSize,board1DSize,3),
                   outputSize=board1DSize*board1DSize+1)
 
 def gameOver(board):
@@ -54,6 +54,7 @@ def playGame(brain,TotalGames):
         ind = 0
         piLabel = np.zeros((nMoves,board1DSize*board1DSize))
         states = np.zeros((nMoves,2*board1DSize*board1DSize+1))
+        statesCNN = np.zeros((nMoves,board1DSize,board1DSize,3))
         Z = np.zeros((nMoves))
         for state in playedMoves:
             pi = playedMoves[state]
@@ -61,10 +62,10 @@ def playGame(brain,TotalGames):
             #add z to pi to make output vector
             #add states to make input vector
             piLabel[ind] = pi
-            states[ind] = np.float32(board.decodeState(state))
+            statesCNN[ind] = np.float32(board.decodeStateCNN(state))
             Z[ind] = z
             ind +=1
-        allStates.append(states)
+        allStates.append(statesCNN)
         allPiLabels.append(piLabel)
         allZ.append(Z)
     
@@ -75,7 +76,7 @@ def playGame(brain,TotalGames):
     
 for ii in range(totalBatches):
     print(ii)
-    brain.loadModel()
+#    brain.loadModel()
     (inp,pi,z) = playGame(brain,gamesTrainBatch)
     #print("inp",inp)
     #print("pi",pi)

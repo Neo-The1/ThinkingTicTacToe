@@ -2,9 +2,10 @@
 import numpy as np
 from tttBoard import tttBoard
 board1DSize = 3
-from deepNeuralNetwork import dnNetwork
-alphaZero = dnNetwork(inputSize=2*board1DSize*board1DSize+1,
-                      outputSize=board1DSize*board1DSize+1)
+from convNeuralNetwork import cnNetwork
+alphaZero = cnNetwork(inputShape=(board1DSize,board1DSize,3),
+                  outputSize=board1DSize*board1DSize+1)
+
 alphaZero.loadModel()
 board = tttBoard(board1DSize)
 board.display()
@@ -30,7 +31,7 @@ while len(board.legalMoves()) > 0 and not(gameOver(board)):
     if gameOver(board):
         break
     print('Thinking...')
-    alphaZeroPredict = alphaZero.predict(board.decodeState(board.getState()))
+    alphaZeroPredict = alphaZero.predict(board.decodeStateCNN(board.getState()))
     alphaZeroMovesProbs = alphaZeroPredict[0].flatten()
     print(alphaZeroMovesProbs)
     board.makeMove(np.argmax(alphaZeroMovesProbs))

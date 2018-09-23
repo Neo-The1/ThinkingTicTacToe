@@ -78,7 +78,7 @@ class alphaZeroMCTS:
             # networkPredict is a list of probabilities of making a move on each square
             # of the board and a last entry {-1, 0, 1} to estimate winner
             else:
-                networkPredict = self._network.predict(self._board.decodeState(s))
+                networkPredict = self._network.predict(self._board.decodeStateCNN(s))
                 netPredictPi = networkPredict[0].flatten()
                 netPredictZ = networkPredict[1].flatten()
                 move = np.argmax(netPredictPi)

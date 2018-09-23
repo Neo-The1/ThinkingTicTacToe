@@ -41,6 +41,33 @@ class tttBoard:
         else:
             state[0, -1] = 2
         return state
+    
+    def decodeStateCNN(self, s):
+        """ takes state list of array boardSize and returns
+            a 3D array: 1DboardSize*1DboardSize*3
+            where last index has one layer for O's board
+            (1 for occupied and 0 for unoccupied)
+            one layer for player X's board
+            and one layer which is either 1 for O or 0 for X
+            
+        """
+        oneDsize = self._1Dsize
+        state = np.zeros((1,oneDsize,oneDsize,3))
+        numOccupiedSq = 0;
+        for i in range(self._boardSize):
+            row,col = np.divmod(i,oneDsize)
+            if s[i] == '1':
+                state[0,row,col,0] = 1
+                numOccupiedSq += 1;
+            elif s[i] == '2':
+                state[0,row,col,1] = 1
+                numOccupiedSq += 1;
+        # every even's turn is O's move
+        if numOccupiedSq % 2 == 0:
+            state[0,:,2] = 1
+        else:
+            state[:,2] = 0
+        return state
 
     def currPlayer(self):
         if len(self._history)==0:

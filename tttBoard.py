@@ -15,7 +15,8 @@ class tttBoard:
         self._board = [0]*n*n
         self._state = "".join([str(p) for p in self._board])
         #history contains the list of all moves
-        self._history = []
+        self._stateHistory = []
+        self._moveHistory = []
         self._boardSize = n*n
         self._1Dsize = n
 
@@ -42,38 +43,46 @@ class tttBoard:
             state[0, -1] = 2
         return state
     
-    def decodeStateCNN(self, s):
-        """ takes state list of array boardSize and returns
-            a 3D array: 1DboardSize*1DboardSize*3
-            where last index has one layer for O's board
-            (1 for occupied and 0 for unoccupied)
-            one layer for player X's board
-            and one layer which is either 1 for O or 0 for X
-            
+    def decodeStateCNN(self, h):
+        """ takes hisory, where each element is a state and returns
+            a 3D array: 1DboardSize*1DboardSize*7
+            data is of format (O{t},O{t-1},O{t-2},X{t},X{t-1},X{t-2},C)
+            Where O{s} and X{s} represent 1DboardSize*1DboardSize arrays representing 
+            there postions as 1 for occupied and 0 for unoccupied at time s
+            C is constant 1DboardSize*1DboardSize array, 1 for O and 0 for X 
+
+            Third layer contains 
         """
         oneDsize = self._1Dsize
-        state = np.zeros((1,oneDsize,oneDsize,3))
-        numOccupiedSq = 0;
-        for i in range(self._boardSize):
-            row,col = np.divmod(i,oneDsize)
-            if s[i] == '1':
-                state[0,row,col,0] = 1
-                numOccupiedSq += 1;
-            elif s[i] == '2':
-                state[0,row,col,1] = 1
-                numOccupiedSq += 1;
-        # every even's turn is O's move
-        if numOccupiedSq % 2 == 0:
-            state[0,:,2] = 1
+        state = np.zeros((1,oneDsize,oneDsize,7))        
+        hist = list(range(3))
+        numMoves = min(len(h),3)
+        if numMoves <= 3:
+            for k in range(numMoves):
+                hist[k] = h[-1*k-1]
+                
+        for k in range(numMoves,3):
+            hist[k] = '000000000'
+        for n in range(3):
+            s = hist[n]
+            for i in range(self._boardSize):
+                row,col = np.divmod(i,oneDsize)
+                if s[i] == '1':
+                    state[0,row,col,n] = 1
+                elif s[i] == '2':
+                    state[0,row,col,n+3] = 1                
+        
+        if self.currPlayer() == 1:
+            state[0,:,:,6] = 1
         else:
-            state[:,2] = 0
+            state[0,:,:,6] = 0
         return state
 
     def currPlayer(self):
-        if len(self._history)==0:
+        if len(self._moveHistory)==0:
             #if fist move, currPlayer is 1 = O
             return 1
-        if 'O' in self._history[-1] :
+        if 'O' in self._moveHistory[-1] :
             #if last move was made by O, current player is X
             return 2 
         else:
@@ -118,10 +127,11 @@ class tttBoard:
     def makeMove(self, move):
         assert( move in self.legalMoves())
         self._board[move] = self.currPlayer()
+        self._stateHistory.append(self.getState())
         if self.currPlayer() == 1:
-            self._history.append('O'+str(move))
+            self._moveHistory.append('O'+str(move))
         else:
-            self._history.append('X'+str(move))
+            self._moveHistory.append('X'+str(move))
         return self._board
 
     def playerAt(self, cell):
@@ -135,7 +145,8 @@ class tttBoard:
 
     def getState(self):
         return "".join([str(p) for p in self._board])
-
+    
+    
     def getStateAfterMove(self, move):
         boardcopy = self._board[:]
         boardcopy[move] = self.currPlayer()
@@ -196,7 +207,7 @@ class tttBoard:
         if self.checkWin(Oboard):
             winner = 1
         elif self.checkWin(Xboard):
-            winner = 2
+            winner = -1
         else:
             if not self.legalMoves():
                 winner = -1

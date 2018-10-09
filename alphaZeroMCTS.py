@@ -21,6 +21,7 @@ class alphaZeroMCTS:
         self._z = None
         self._network = network
         self._maxMoves = 10
+        self._maxGameSim =1
 
     def ucb(self, s, a, cumulativeVisitCount):
         """ returns upper confidence bound for choosing move a from board
@@ -78,15 +79,18 @@ class alphaZeroMCTS:
             # networkPredict is a list of probabilities of making a move on each square
             # of the board and a last entry {-1, 0, 1} to estimate winner
             else:
-                networkPredict = self._network.predict(self._board.decodeStateCNN(s))
-                netPredictPi = networkPredict[0].flatten()
-                netPredictZ = networkPredict[1].flatten()
-                move = np.argmax(netPredictPi)
-                #If move is not legal, play randomly
-                if move not in legalMoves:
-                    move = choice(legalMoves)
+                networkPredict = self._network.predict(self._board.decodeStateCNN(
+                        self._board._stateHistory))
+                Pi = networkPredict[0].flatten()
+                Z = networkPredict[1].flatten()
+                move = np.argmax(Pi)
+                #WHAT TO DO If move is not legal :'( 
+                print(legalMoves)
+#                if move not in legalMoves:
+                    
+                print(move)
                 visitedActions.add((s, move))
-                self.initializeNode(s,legalMoves,netPredictPi)
+                self.initializeNode(s,legalMoves,Pi)
                 simulationBoard.makeMove(move)
                 winner = simulationBoard.winner()
                 s = simulationBoard.getState()
@@ -99,7 +103,7 @@ class alphaZeroMCTS:
         for s, move in visitedActions:
             self._N_sa[(s, move)] += 1
             if nodeExpanded:  # network predicted winner
-                self._W_sa[(s, move)] += netPredictZ[0]
+                self._W_sa[(s, move)] += Z[0]
             else: # true winner
                 #After last move
                 if winner == 1:
@@ -109,7 +113,7 @@ class alphaZeroMCTS:
                 
             self._Q_sa[(s, move)] = self._W_sa[(s, move)]/self._N_sa[(s, move)]
 
-    def getMCTSMoveProbs(self,tau=0):
+    def getMCTSMoveProbs(self,tau=1):
         """ returns  the vector pi of move probability at each move
             and scalar winner z
             tau is a parameter which determines whether max move is returned (tau=0)
@@ -120,7 +124,7 @@ class alphaZeroMCTS:
         # no need to run simulation if there are no real choices
         # so return accordingly
         games = 0
-        while games < 500:
+        while games < self._maxGameSim:
             self.runSimulation()
             games+=1
         #define new empty list
@@ -137,7 +141,8 @@ class alphaZeroMCTS:
             newOneHotPi = [0]*self._board._boardSize
             newOneHotPi[(np.argmax(newPi))] = 1
             self._pi = newOneHotPi.copy()
-            return self._pi
+        
+        return self._pi
 
     def logSimulationStats(self, board):
         """ treating board as node, prints stats for leaves emanating from it

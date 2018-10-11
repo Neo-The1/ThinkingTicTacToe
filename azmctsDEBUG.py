@@ -1,7 +1,6 @@
-import numpy as np
 from tttBoard import tttBoard
 from alphaZeroMCTS import alphaZeroMCTS
-from deepNeuralNetwork import dnNetwork
+from convNeuralNetwork import cnNetwork
 
 def gameOver(board):
     if (board.winner()):
@@ -15,8 +14,9 @@ def gameOver(board):
         return 0
 
 board1DSize = 3
-brain = dnNetwork(inputSize=2*board1DSize*board1DSize+1,
+brain = cnNetwork(inputShape=(board1DSize,board1DSize,7),
                   outputSize=board1DSize*board1DSize+1)
+
 
 board = tttBoard(board1DSize)
 
@@ -39,9 +39,9 @@ while not gameOver(board):
     n = int(input())
     board.makeMove(n)
     board.display()
-    alphaZeroTTT = alphaZeroMCTS(board, brain)
+    alphaZeroTTT = alphaZeroMCTS(board,brain)
     print("Thinking...")
-    for ii in range(500):
+    for ii in range(1000):
         alphaZeroTTT.runSimulation()
     alphaZeroTTT.logSimulationStats(board)
     s = board.getState()

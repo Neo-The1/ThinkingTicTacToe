@@ -207,7 +207,7 @@ class tttBoard:
         if self.checkWin(Oboard):
             winner = 1
         elif self.checkWin(Xboard):
-            winner = -1
+            winner = 2
         else:
             if not self.legalMoves():
                 winner = -1

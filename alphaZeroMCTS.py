@@ -2,7 +2,7 @@
 # -----------------------------------------------------------------------------
 import copy
 import numpy as np
-from random import choice
+#from random import choice
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 class alphaZeroMCTS:
@@ -37,15 +37,15 @@ class alphaZeroMCTS:
         sample = [np.random.gamma(param, 1) for ii in range(count)]
         return [v / sum(sample) for v in sample]
     
-    def initializeNode(self,s,legalMoves,pi):
+    def initializeNode(self,s,legalMoves,p,v):
         eps    = 0
         dnoise = self.dirichletNoise(0.03, len(legalMoves))
         moveIndex = 0
         for move in legalMoves:
             self._N_sa[(s,move)] = 0
             self._Q_sa[(s,move)] = 0
-            self._W_sa[(s,move)] = 0
-            self._P_sa[(s, move)] = (1. - eps) * pi[move] + eps * dnoise[moveIndex]
+            self._W_sa[(s,move)] = v
+            self._P_sa[(s, move)] = (1. - eps) * p[move] + eps * dnoise[moveIndex]
             moveIndex += 1
 
     def runSimulation(self):
@@ -57,7 +57,6 @@ class alphaZeroMCTS:
         # board by making moves on it
         simulationBoard = copy.deepcopy(self._board)
         s = simulationBoard.getState()
-        nodeExpanded = False
 
         for t in range(self._maxMoves):
             legalMoves = simulationBoard.legalMoves()
@@ -72,7 +71,7 @@ class alphaZeroMCTS:
                 ucbValue, move= max((self.ucb(s, a, cumulativeVisitCount), a) 
                 for a in legalMoves)
                 print("playing ucb ",ucbValue, move)
-#                visitedActions.add((s, move))
+                visitedActions.add((s, move))
 #                simulationBoard.makeMove(move)
 #                winner = simulationBoard.winner()
 #                s = simulationBoard.getState()
@@ -80,48 +79,39 @@ class alphaZeroMCTS:
             # networkPredict is a list of probabilities of making a move on each square
             # of the board and a last entry {-1, 0, 1} to estimate winner
             else:
-                nodeExpanded = True
-                print("playing random")
-#                networkPredict = self._network.predict(self._board.decodeStateCNN(
-#                        self._board._stateHistory))
-#                Pi = networkPredict[0].flatten()
-#                Z = networkPredict[1].flatten()
-#                move = np.argmax(Pi)
+                print("playing nn")
+                networkPredict = self._network.predict(self._board.decodeStateCNN(
+                        self._board._stateHistory))
+                p = networkPredict[0].flatten()
+                v = networkPredict[1].flatten()
+                move = np.argmax(p)
+                visitedActions.add((s, move))
+                self.initializeNode(s,legalMoves,p,v)
+                self.backup(visitedActions,v)
 #                #WHAT TO DO If move is not legal :'( 
                 
-                move = choice(legalMoves)
+#                move = choice(legalMoves)
 #                print(legalMoves)
 #                if move not in legalMoves:
                     
-                print(move)
-            Pi = [0]*self._board._boardSize
-            Pi[move] = 1
-            visitedActions.add((s, move))
-            if(nodeExpanded):
-                self.initializeNode(s,legalMoves,Pi)
-                
+#                print(move)
+#            Pi = [0]*self._board._boardSize
+#            Pi[move] = 1
+            
             simulationBoard.makeMove(move)
             winner = simulationBoard.winner()
             s = simulationBoard.getState()
 #            nodeExpanded = True
 #            break
-            
             if winner:
                 print("win",winner)
                 break
-                
+            
+    def backup(self,visitedActions,v):
         for s, move in visitedActions:
-            print("updating N for s and move ",s, " ", move)
+#            print("updating N for s and move ",s, " ", move)
             self._N_sa[(s, move)] += 1
-#            if nodeExpanded:  # network predicted winner
-#                self._W_sa[(s, move)] += Z[0]
-#            else: # true winner
-#                #After last move
-            if winner == 1:
-                self._W_sa[(s, move)] += -1
-            elif winner == 2:
-                self._W_sa[(s, move)] += 1
-                
+            self._W_sa[(s, move)] += v                
             self._Q_sa[(s, move)] = self._W_sa[(s, move)]/self._N_sa[(s, move)]
 
     def getMCTSMoveProbs(self,tau=0):
@@ -142,7 +132,7 @@ class alphaZeroMCTS:
         newPi = [0]*self._board._boardSize
         for ii in range(self._board._boardSize):
             if ii in legalMoves:
-                newPi[ii] = self._P_sa[(s,ii)]
+                newPi[ii] = self._N_sa[(s,ii)]
         #normalize pi is tau = 1, convert it to one hot if tau = 0
         N = np.sum(newPi) #total N, needed to normalize
         if tau == 1:

@@ -1,5 +1,5 @@
 from tttBoard import tttBoard
-from alphaZeroMCTS import alphaZeroMCTS
+from alphaZeroMCTSDebug import alphaZeroMCTS
 from convNeuralNetwork import cnNetwork
 
 def gameOver(board):

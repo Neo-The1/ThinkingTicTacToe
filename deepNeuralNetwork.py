@@ -1,6 +1,5 @@
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
-import tensorflow as tf
 from tensorflow import keras
 import numpy as np
 #from tensorflow.examples.tutorials.mnist import input_data
@@ -19,20 +18,21 @@ class dnNetwork():
         self._saveFile = kwds.get('saveFile')
         self._inputSize = inputSize
         self._outputSize= outputSize
-        self._layer1 = keras.layers.Dense(64,activation='relu')
-        self._layer2 = keras.layers.Dense(32,activation='relu')    
-        self._piLayer = keras.layers.Dense(self._outputSize-1,activation='relu')
-        self._zLayer = keras.layers.Dense(1,activation='tanh')
+        self._layer1 = keras.layers.Dense(32,activation='relu')
+        self._layer2 = keras.layers.Dense(16,activation='relu')    
+        self._piLayer = keras.layers.Dense(self._outputSize-1,activation='softmax')
+#        self._zLayer = keras.layers.Dense(1,activation='tanh')
         self._inputs = keras.Input(shape=(self._inputSize,)) #returns placeholder
         x = self._layer1(self._inputs)
         x = self._layer2(x)
         self._outPi = self._piLayer(x)
-        self._outZ = self._zLayer(x)
-        self._model = keras.Model(inputs=self._inputs,outputs=[self._outPi,self._outZ])
-        self._model.compile(optimizer=tf.train.AdamOptimizer(0.001),
-                      loss=self.loss,
+#        self._outZ = self._zLayer(x)
+#        self._model = keras.Model(inputs=self._inputs,outputs=[self._outPi,self._outZ])
+        self._model = keras.Model(inputs=self._inputs,outputs=self._outPi)
+        self._model.compile(optimizer=keras.optimizers.Adam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-10, decay=0.000001),
+                      loss="categorical_crossentropy",
                       metrics=['accuracy'])
-        self._epochSize = 20
+        self._epochSize = 128
 
     def loss(self,yTrue,yPred):
         z = keras.backend.flatten(yTrue[-1])
@@ -106,4 +106,5 @@ if __name__ == "__main__":
 #    print(testNet.predict(states))
     result = testNet.predict(board.decodeState(board.getState()))
     print(result[0].flatten())
-    print(result[1].flatten())
+    testNet.saveModel()
+#    print(result[1].flatten())

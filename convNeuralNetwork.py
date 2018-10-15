@@ -15,20 +15,21 @@ class cnNetwork():
         self._outputSize= outputSize
         self._layer1 = keras.layers.Conv2D(16,kernel_size=(3,3),strides=(1,1),
                                            padding='same',kernel_initializer='glorot_uniform',
-                                           kernel_regularizer=keras.regularizers.l2(0.01))
+                                           kernel_regularizer=keras.regularizers.l2(0.0001))
         self._layer2 = keras.layers.BatchNormalization()
         self._layer3 = keras.layers.Activation('relu')
 #        self._layerPool = keras.layers.MaxPool2D(pool_size=(2,2),strides=2)
         self._layer4 = keras.layers.Conv2D(16,kernel_size=(3,3),strides=(1,1),
                                            padding='same',kernel_initializer='glorot_uniform',
-                                           kernel_regularizer=keras.regularizers.l2(0.01))
+                                           kernel_regularizer=keras.regularizers.l2(0.0001))
         self._layer5 = keras.layers.BatchNormalization()
         self._layer6 = keras.layers.Activation('relu')
         self._layerFlat = keras.layers.Flatten()
         self._piLayer = keras.layers.Dense(self._outputSize-1,
                                            kernel_initializer='glorot_uniform',
-                                           kernel_regularizer=keras.regularizers.l2(0.01))
-        self._zLayer = keras.layers.Dense(1,activation='tanh')
+                                           kernel_regularizer=keras.regularizers.l2(0.0001),
+                                           activation='relu')
+#        self._zLayer = keras.layers.Dense(1,activation='tanh')
         self._inputs = keras.Input(shape=self._inputShape) #returns placeholder
         x = self._layer1(self._inputs)
         x = self._layer2(x)
@@ -38,10 +39,11 @@ class cnNetwork():
         x = self._layer6(x)
         x = self._layerFlat(x)
         self._outPi = self._piLayer(x)
-        self._outZ = self._zLayer(x)
-        self._model = keras.Model(inputs=self._inputs,outputs=[self._outPi,self._outZ])
-        self._model.compile(optimizer=tf.train.AdamOptimizer(0.001),
-                      loss=self.loss,
+#        self._outZ = self._zLayer(x)
+#        self._model = keras.Model(inputs=self._inputs,outputs=[self._outPi,self._outZ])
+        self._model = keras.Model(inputs=self._inputs,outputs=self._outPi)
+        self._model.compile(optimizer=tf.train.AdamOptimizer(0.0001),
+                      loss='categorical_crossentropy',
                       metrics=['accuracy'])
         self._epochSize = 128
         
@@ -69,7 +71,7 @@ class cnNetwork():
     def train(self, train_x,train_y):
         """ Train the network using passed training data as numpy array
         """
-        self._model.fit(train_x,train_y,batch_size=1,epochs = self._epochSize)
+        self._model.fit(train_x,train_y,batch_size=8,epochs = self._epochSize)
         return None
     
     def predict(self,x):
@@ -98,4 +100,12 @@ if __name__ == "__main__":
 #    print(testNet.predict(states))
     result = testNet.predict(board.decodeStateCNN(board._stateHistory))
     print(result[0].flatten())
-    print(result[1].flatten())
+#    print(result[1].flatten())
+    print(np.argmax(result[0].flatten()))
+    board.makeMove(7)
+    result = testNet.predict(board.decodeStateCNN(board._stateHistory))
+    print(result[0].flatten())
+#    print(result[1].flatten())
+    print(np.argmax(result[0].flatten()))
+    print(result[0].shape)
+    testNet.saveModel()

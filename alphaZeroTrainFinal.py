@@ -1,14 +1,15 @@
 from alphaZeroMCTS import alphaZeroMCTS
 from tttBoard import tttBoard
-from convNeuralNetwork import cnNetwork
+#from convNeuralNetwork import cnNetwork
+from deepNeuralNetwork import dnNetwork
 import numpy as np
 
 board1DSize = 3
-gamesTrainBatch = 1
+gamesTrainBatch = 5000
 totalBatches =1
-brain = cnNetwork(inputShape=(board1DSize,board1DSize,7),
-                  outputSize=board1DSize*board1DSize+1)
-
+#brain = cnNetwork(inputShape=(board1DSize,board1DSize,7),
+#                  outputSize=board1DSize*board1DSize+1)
+brain = dnNetwork(2*board1DSize*board1DSize+1,board1DSize*board1DSize+1)
 def gameOver(board):
     if (board.winner()):
         if(board.winner()==1):
@@ -26,17 +27,18 @@ def playGame(brain,TotalGames):
     allPiLabels = []
     allZ = []
     while games < TotalGames:
+        print(games)
         playedMoves = {}
         board = tttBoard(board1DSize)
         nMoves = 0
         #brain.loadModel()
         while len(board.legalMoves()) > 0:
             state = board.getState()
-            print("state ",state)
+#            print("state ",state)
             alphaZeroTTT = alphaZeroMCTS(board,brain)
             pi = alphaZeroTTT.getMCTSMoveProbs()
             playedMoves[state] = pi
-            print("pi ", pi)
+#            print("pi ", pi)
             board.makeMove(np.argmax(pi))
 #            print("move ",np.argmax(pi))
 #            board.display()
@@ -54,8 +56,8 @@ def playGame(brain,TotalGames):
                 break
         ind = 0
         piLabel = np.zeros((nMoves,board1DSize*board1DSize))
-#        states = np.zeros((nMoves,2*board1DSize*board1DSize+1))
-        statesCNN = np.zeros((nMoves,board1DSize,board1DSize,7))
+        states = np.zeros((nMoves,2*board1DSize*board1DSize+1))
+#        statesCNN = np.zeros((nMoves,board1DSize,board1DSize,7))
         Z = np.zeros((nMoves))
         for state in playedMoves:
             pi = playedMoves[state]
@@ -63,10 +65,11 @@ def playGame(brain,TotalGames):
             #add z to pi to make output vector
             #add states to make input vector
             piLabel[ind] = pi
-            statesCNN[ind] = np.float32(board.decodeStateCNN(board._stateHistory))
+#            statesCNN[ind] = np.float32(board.decodeStateCNN(board._stateHistory))
+            states[ind] = np.float32(board.decodeState(state))
             Z[ind] = z
             ind +=1
-        allStates.append(statesCNN)
+        allStates.append(states)
         allPiLabels.append(piLabel)
         allZ.append(Z)
     
@@ -82,5 +85,5 @@ for ii in range(totalBatches):
     #print("inp",inp)
     #print("pi",pi)
     #print("z",z)
-    brain.train(inp,[pi,z])
+    brain.train(inp,pi)
     brain.saveModel()

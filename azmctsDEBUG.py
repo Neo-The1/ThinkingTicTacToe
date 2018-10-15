@@ -1,5 +1,5 @@
 from tttBoard import tttBoard
-from alphaZeroMCTSDebug import alphaZeroMCTS
+from alphaZeroMCTS import alphaZeroMCTS
 from convNeuralNetwork import cnNetwork
 
 def gameOver(board):
@@ -41,12 +41,12 @@ while not gameOver(board):
     board.display()
     alphaZeroTTT = alphaZeroMCTS(board,brain)
     print("Thinking...")
-    for ii in range(1000):
+    for ii in range(100):
         alphaZeroTTT.runSimulation()
     alphaZeroTTT.logSimulationStats(board)
     s = board.getState()
     #prob, move = max((alphaZeroTTT._W_sa[(s, a)] / alphaZeroTTT._N_sa[(s, a)], a) for a in board.legalMoves())
-    prob, move = max((alphaZeroTTT._N_sa[(s, a)], a) for a in board.legalMoves())
+    prob, move = max((alphaZeroTTT._W_sa[(s, a)], a) for a in board.legalMoves())
     #for a in board.legalMoves():
     #    print(a, alphaZeroTTT._Q_sa[(s,a)], '\t', alphaZeroTTT._W_sa[(s,a)], '\t', alphaZeroTTT._N_sa[(s,a)], '\t', alphaZeroTTT._P_sa[(s,a)])
     print(prob, move)

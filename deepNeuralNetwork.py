@@ -20,16 +20,18 @@ class dnNetwork():
         self._outputSize= outputSize
         self._layer1 = keras.layers.Dense(32,activation='relu')
         self._layer2 = keras.layers.Dense(16,activation='relu')    
+        self._layer3 = keras.layers.Dense(8,activation='relu')
         self._piLayer = keras.layers.Dense(self._outputSize-1,activation='softmax')
 #        self._zLayer = keras.layers.Dense(1,activation='tanh')
         self._inputs = keras.Input(shape=(self._inputSize,)) #returns placeholder
         x = self._layer1(self._inputs)
         x = self._layer2(x)
+        x = self._layer3(x)
         self._outPi = self._piLayer(x)
 #        self._outZ = self._zLayer(x)
 #        self._model = keras.Model(inputs=self._inputs,outputs=[self._outPi,self._outZ])
         self._model = keras.Model(inputs=self._inputs,outputs=self._outPi)
-        self._model.compile(optimizer=keras.optimizers.Adam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-10, decay=0.000001),
+        self._model.compile(optimizer=keras.optimizers.Adam(lr=0.005, beta_1=0.9, beta_2=0.999, epsilon=1e-10, decay=0.0005),
                       loss="categorical_crossentropy",
                       metrics=['accuracy'])
         self._epochSize = 128

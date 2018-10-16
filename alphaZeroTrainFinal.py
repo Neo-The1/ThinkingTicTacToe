@@ -1,11 +1,11 @@
-from alphaZeroMCTS import alphaZeroMCTS
+from alphaZeroMCTS_SL import alphaZeroMCTS
 from tttBoard import tttBoard
 #from convNeuralNetwork import cnNetwork
 from deepNeuralNetwork import dnNetwork
 import numpy as np
 
 board1DSize = 3
-gamesTrainBatch = 5000
+gamesTrainBatch = 100
 totalBatches =1
 #brain = cnNetwork(inputShape=(board1DSize,board1DSize,7),
 #                  outputSize=board1DSize*board1DSize+1)
@@ -77,13 +77,43 @@ def playGame(brain,TotalGames):
     allPiLabels = np.concatenate(allPiLabels)
     allZ = np.concatenate(allZ)    
     return (allStates, allPiLabels, allZ)
-    
+
+#def writeData(feature,label,filename):
+#    N = len(feature)
+#    with open(filename,"w") as outFile:
+#        for i in range(N):
+#            x = feature[i]
+#            y = label[i]
+#            outFile.write(str(x)+","+str(y)+"\n")
+#    outFile.close()
+#    return 0
+#
+#def readData(filename):
+#    x = []
+#    y = []
+#    with open(filename,"r") as file:
+#        file_reader = csv.reader(file,delimiter=",")
+#        count = 0
+#        for row in file_reader:
+#            print(row)
+#            x.append(row[0])
+#            y.append(row[1])
+#            count +=1
+#    return x,y
+            
+        
 for ii in range(totalBatches):
     print(ii)
 #    brain.loadModel()
-    (inp,pi,z) = playGame(brain,gamesTrainBatch)
+#    (inp,pi,z) = playGame(brain,gamesTrainBatch)
+#    np.savetxt("train_x.txt",inp, fmt='%2d', delimiter=',', newline='\n')
+#    np.savetxt("train_y.txt",pi, fmt='%2d', delimiter=',', newline='\n')
+    train_x = np.loadtxt("train_x.txt",delimiter=',')
+    train_y = np.loadtxt("train_y.txt",delimiter=',')
+#    print(train_x)
+#    print(train_y)
     #print("inp",inp)
     #print("pi",pi)
     #print("z",z)
-    brain.train(inp,pi)
+    brain.train(train_x,train_y)
     brain.saveModel()

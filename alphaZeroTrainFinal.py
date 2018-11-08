@@ -5,7 +5,7 @@ from deepNeuralNetwork import dnNetwork
 import numpy as np
 
 board1DSize = 3
-gamesTrainBatch = 100
+gamesTrainBatch = 1000
 totalBatches =1
 #brain = cnNetwork(inputShape=(board1DSize,board1DSize,7),
 #                  outputSize=board1DSize*board1DSize+1)
@@ -81,9 +81,9 @@ def playGame(brain,TotalGames):
 for ii in range(totalBatches):
     print(ii)
 #    brain.loadModel()
-#    (inp,pi,z) = playGame(brain,gamesTrainBatch)
-#    np.savetxt("train_x.txt",inp, fmt='%2d', delimiter=',', newline='\n')
-#    np.savetxt("train_y.txt",pi, fmt='%2d', delimiter=',', newline='\n')
+    (inp,pi,z) = playGame(brain,gamesTrainBatch)
+    np.savetxt("train_x.txt",inp, fmt='%2d', delimiter=',', newline='\n')
+    np.savetxt("train_y.txt",pi, fmt='%2d', delimiter=',', newline='\n')
     train_x = np.loadtxt("train_x.txt",delimiter=',')
     train_y = np.loadtxt("train_y.txt",delimiter=',')
 #    print(train_x)

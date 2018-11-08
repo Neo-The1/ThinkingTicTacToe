@@ -88,7 +88,7 @@ class alphaZeroMCTS:
         while games < self._maxGameSim:
             self.runSimulation()
             games+=1
-        prob, move = max((self._Q_sa.get((boardState,a),0), a) for a in legalMoves)
+        prob, move = max(( (self._W_sa[(boardState,a)]-self._L_sa[(boardState,a)])/self._N_sa[(boardState,a)], a) for a in legalMoves)
         pi = [0]*9
         pi[move] = 1
         return pi

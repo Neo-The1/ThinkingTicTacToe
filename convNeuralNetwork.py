@@ -52,7 +52,7 @@ class cnNetwork():
         v = keras.backend.flatten(yPred[-1])
         pi = keras.backend.flatten(yTrue[0])
         p = keras.backend.flatten(yPred[0])
-        loss = keras.backend.square(z-v)
+        loss = 0.01*keras.backend.square(z-v)
         - keras.backend.sum(keras.backend.transpose(pi)*keras.backend.log(p),axis=-1,keepdims=True)
         return loss
 

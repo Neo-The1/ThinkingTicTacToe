@@ -59,14 +59,13 @@ class alphaZeroMCTS:
             visitedActions.add((simBoardState, move))            
             simulationBoard.makeMove(move)
             simBoardState  = simulationBoard.getState()
-            currPlayer = simulationBoard.currPlayer()
             winner = simulationBoard.winner()
             if winner:
                 break
         loser = simulationBoard.opponent(winner)        
 
         for simBoardState, move in visitedActions:
-            currPlayer= self._board.currPlayer()
+            currPlayer = self._board.stateToPlayer(simBoardState)
             if (simBoardState,move) not in self._N_sa:
                 continue
             self._N_sa[(simBoardState, move)] += 1

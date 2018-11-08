@@ -77,30 +77,6 @@ def playGame(brain,TotalGames):
     allPiLabels = np.concatenate(allPiLabels)
     allZ = np.concatenate(allZ)    
     return (allStates, allPiLabels, allZ)
-
-#def writeData(feature,label,filename):
-#    N = len(feature)
-#    with open(filename,"w") as outFile:
-#        for i in range(N):
-#            x = feature[i]
-#            y = label[i]
-#            outFile.write(str(x)+","+str(y)+"\n")
-#    outFile.close()
-#    return 0
-#
-#def readData(filename):
-#    x = []
-#    y = []
-#    with open(filename,"r") as file:
-#        file_reader = csv.reader(file,delimiter=",")
-#        count = 0
-#        for row in file_reader:
-#            print(row)
-#            x.append(row[0])
-#            y.append(row[1])
-#            count +=1
-#    return x,y
-            
         
 for ii in range(totalBatches):
     print(ii)

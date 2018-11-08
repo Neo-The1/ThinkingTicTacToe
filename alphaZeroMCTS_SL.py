@@ -35,7 +35,7 @@ class alphaZeroMCTS:
 
         for t in range(self._maxMoves):
             legalMoves = simulationBoard.legalMoves()
-            statesMoves = [(simulationBoard.getState(),a) for a in legalMoves]
+            statesMoves = [(simulationBoard.getStateAfterMove(a),a) for a in legalMoves]
             #stop if no legal moves
             if len(legalMoves) == 0:
                 break
@@ -47,6 +47,7 @@ class alphaZeroMCTS:
                 ucbVal, state, move= max( ( (W[(simBoardState,a)]/N[(simBoardState,a)]) + self._ucbK*np.sqrt(logNtotal/N[(simBoardState,a)]), s, a) for s,a in statesMoves)
             else:                
                 state, move = choice(statesMoves)
+                
             Pi = [0]*self._board._boardSize
             Pi[move] = 1
             if expandNode and (simBoardState,move) not in self._N_sa:
@@ -65,6 +66,7 @@ class alphaZeroMCTS:
         loser = simulationBoard.opponent(winner)        
 
         for simBoardState, move in visitedActions:
+            currPlayer= self._board.currPlayer()
             if (simBoardState,move) not in self._N_sa:
                 continue
             self._N_sa[(simBoardState, move)] += 1

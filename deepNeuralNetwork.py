@@ -22,17 +22,17 @@ class dnNetwork():
         self._layer2 = keras.layers.Dense(64,activation='relu')    
         self._layer3 = keras.layers.Dense(128,activation='relu')
         self._piLayer = keras.layers.Dense(self._outputSize-1,activation='softmax')
-#        self._zLayer = keras.layers.Dense(1,activation='tanh')
+        self._zLayer = keras.layers.Dense(1,activation='tanh')
         self._inputs = keras.Input(shape=(self._inputSize,)) #returns placeholder
         x = self._layer1(self._inputs)
         x = self._layer2(x)
         x = self._layer3(x)
         self._outPi = self._piLayer(x)
-#        self._outZ = self._zLayer(x)
-#        self._model = keras.Model(inputs=self._inputs,outputs=[self._outPi,self._outZ])
-        self._model = keras.Model(inputs=self._inputs,outputs=self._outPi)
+        self._outZ = self._zLayer(x)
+        self._model = keras.Model(inputs=self._inputs,outputs=[self._outPi,self._outZ])
+#        self._model = keras.Model(inputs=self._inputs,outputs=self._outPi)
         self._model.compile(optimizer=keras.optimizers.Adam(lr=0.005, beta_1=0.99, beta_2=0.999, epsilon=1e-10, decay=0.0005),
-                      loss="categorical_crossentropy",
+                      loss=self.loss,
                       metrics=['accuracy'])
         self._epochSize = 128
 
@@ -60,7 +60,7 @@ class dnNetwork():
     def train(self, train_x,train_y):
         """ Train the network using passed training data as numpy array
         """
-        self._model.fit(train_x,train_y,batch_size=8,epochs = self._epochSize)
+        self._model.fit(train_x,train_y,batch_size=1,epochs = self._epochSize)
         return None
     
     def predict(self,x):
@@ -103,10 +103,9 @@ if __name__ == "__main__":
     board.makeMove(5)
     states = np.zeros((1,19))
     testNet = dnNetwork(19,10)
-#    states[0,:] = board.decodeState(board.getState())
-#    print(states)
-#    print(testNet.predict(states))
+    states[0,:] = board.decodeState(board.getState())
+    print(states)
     result = testNet.predict(board.decodeState(board.getState()))
-    print(result[0].flatten())
+    print(result)
+#    testNet.train(states,result)
     testNet.saveModel()
-#    print(result[1].flatten())

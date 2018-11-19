@@ -18,10 +18,9 @@ class alphaZeroMCTS:
         self._P_sa = {}
         self._board = board
         self._network = network
-        self._maxMoves = 100
+        self._maxMoves = 1000
         self._maxGameSim =500
         self._ucbK = 1.4
-        self._z = 0
         self._pi = [0]*self._board._boardSize
         self._v = 0
         self._p = [0]*self._board._boardSize
@@ -35,7 +34,6 @@ class alphaZeroMCTS:
         # board by making moves on it
         simulationBoard = copy.deepcopy(self._board)
         simBoardState = simulationBoard.getState()
-        expandNode = True
         Q,N = self._Q_sa,self._N_sa
 
         for t in range(self._maxMoves):
@@ -44,47 +42,35 @@ class alphaZeroMCTS:
             if len(legalMoves) == 0:
                 break
             # check if node has been expanded
-            if any(self._N_sa.get((simBoardState,a)) for a in legalMoves):
-                # use the UCB formula
-                Ntotal = sum(N.get((simBoardState, a)) for a in legalMoves)
+            if  all(N.get((simBoardState,a)) for a in legalMoves):
+                 #use the UCB formula
+                Ntotal = sum(filter(None,(N.get((simBoardState, a)) for a in legalMoves)))
                 logNtotal = np.log(Ntotal)
                 ucbVal, move= max( ( (Q[(simBoardState,a)]) + self._ucbK*np.sqrt(logNtotal/N[(simBoardState,a)]), a) for a in legalMoves)
-                
+                visitedActions.add((simBoardState,move))
             else:
-                netPredict = self._network.predict(self._board.decodeState(simBoardState))
-                self._p = netPredict[0].flatten()
-                self._v = netPredict[1].flatten()[0]
-                move = np.argmax(self._p)
+                self._p,self._v = self._network.predict(self._board.decodeState(simBoardState))
                 
-            if expandNode and (simBoardState,move) not in self._N_sa:
                 for a in legalMoves:
                     self._N_sa[(simBoardState,a)]=0
                     self._Q_sa[(simBoardState,a)]=0
                     self._W_sa[(simBoardState,a)]=0
-                    self._P_sa[(simBoardState,a)]=0
+                    self._P_sa[(simBoardState,a)]=self._p[a]
+                    visitedActions.add((simBoardState,a))
+                break
                 
-#                self._W_sa[(simBoardState,move)] = self._v
-#                self._P_sa[(simBoardState,move)] = self._p[move]
-                
-            visitedActions.add((simBoardState, move))            
             simulationBoard.makeMove(move)
             simBoardState  = simulationBoard.getState()
             winner = simulationBoard.winner()
             if winner:
                 break
-        loser = simulationBoard.opponent(winner)        
 
         for simBoardState, move in visitedActions:
-            currPlayer = self._board.stateToPlayer(simBoardState)
             if (simBoardState,move) not in self._N_sa:
                 continue
             self._N_sa[(simBoardState, move)] += 1
             self._W_sa[(simBoardState,move)] += self._v
             self._Q_sa[(simBoardState, move)] = self._W_sa[(simBoardState,move)]/self._N_sa[(simBoardState,move)]
-            if currPlayer == winner:
-                self._z = 1
-            elif currPlayer == loser:
-                self._z = -1
 
     def getMCTSMoveProbs(self,tau=0):
         """ returns  the vector pi of move probability at each move

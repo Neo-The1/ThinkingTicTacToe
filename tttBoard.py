@@ -27,20 +27,20 @@ class tttBoard:
             second boardSize represent X's position
             last element is player to make next move
         """
-        state = np.zeros((1, 2 * self._boardSize + 1))
+        state = np.float32(np.zeros((2 * self._boardSize + 1)))
         numOccupiedSq = 0;
         for i in range(self._boardSize):
             if s[i] == '1':
-                state[0, i] = 1
+                state[i] = 1
                 numOccupiedSq += 1;
             elif s[i] == '2':
-                state[0, self._boardSize+i] = 1
+                state[self._boardSize+i] = 1
                 numOccupiedSq += 1;
         # every even's turn is O's move
         if numOccupiedSq % 2 == 0:
-            state[0, -1] = 1
+            state[-1] = 1
         else:
-            state[0, -1] = 2
+            state[-1] = 2
         return state
     
     def decodeStateCNN(self, h):
@@ -87,6 +87,19 @@ class tttBoard:
             return 2 
         else:
             return 1
+    def stateToPlayer(self,state):
+        numX = 0
+        numO=0
+        for i in range(self._boardSize):
+            if state[i]=='1':
+                numO += 1
+            if state[i]=='2':
+                numX +=1
+        if numX==numO:
+            return 1 #O's turn
+        if numX<numO:
+            return 2 #X's turn
+        return None 
 
     def opponent(self, player):
         """ returns opponent of passed player """

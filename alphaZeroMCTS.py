@@ -18,8 +18,8 @@ class alphaZeroMCTS:
         self._P_sa = {}
         self._board = board
         self._network = network
-        self._maxMoves = 1000
-        self._maxGameSim =500
+        self._maxMoves = 10
+        self._maxGameSim =5
         self._ucbK = 1.4
         self._pi = [0]*self._board._boardSize
         self._v = 0
@@ -46,10 +46,14 @@ class alphaZeroMCTS:
                  #use the UCB formula
                 Ntotal = sum(filter(None,(N.get((simBoardState, a)) for a in legalMoves)))
                 logNtotal = np.log(Ntotal)
-                ucbVal, move= max( ( (Q[(simBoardState,a)]) + self._ucbK*np.sqrt(logNtotal/N[(simBoardState,a)]), a) for a in legalMoves)
+                ucbVal, move= max( ( Q[(simBoardState,a)]
+                + self._ucbK*np.sqrt(logNtotal/N[(simBoardState,a)]),a) for a in legalMoves)
                 visitedActions.add((simBoardState,move))
             else:
-                self._p,self._v = self._network.predict(self._board.decodeState(simBoardState))
+                s = np.zeros((2*self._board._1Dsize**2+1,1))
+                netPredict = self._network.predict(s)
+                self._p = netPredict[0][:,0]
+                self._v = netPredict[1][:,0][0]
                 
                 for a in legalMoves:
                     self._N_sa[(simBoardState,a)]=0

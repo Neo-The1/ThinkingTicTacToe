@@ -55,18 +55,18 @@ def playGame(brain,TotalGames):
                     z = -1
                 break
         ind = 0
-        piLabel = np.zeros((nMoves,board1DSize*board1DSize))
-        ZLabel = np.zeros((nMoves,1))
-        states = np.zeros((nMoves,2*board1DSize*board1DSize+1))
+        piLabel = np.zeros((board1DSize*board1DSize,nMoves))
+        ZLabel = np.zeros((1,nMoves))
+        states = np.zeros((2*board1DSize*board1DSize+1,nMoves))
 #        statesCNN = np.zeros((nMoves,board1DSize,board1DSize,7))
         for state in playedMoves:
             pi = playedMoves[state]
             #define the training data structure here, 
             
 #            statesCNN[ind] = np.float32(board.decodeStateCNN(board._stateHistory))
-            states[ind] = np.float16(board.decodeState(state))
-            piLabel[ind] = pi
-            ZLabel[ind] = z
+            states[:,ind] = board.decodeState(state)
+            piLabel[:,ind] = pi
+            ZLabel[:,ind] = z
             ind+=1
         
         allStates.append(states)
@@ -83,7 +83,7 @@ for ii in range(totalBatches):
     np.savetxt("trainX.txt",inp, fmt='%2d', delimiter=',', newline='\n')
     np.savetxt("trainYPi.txt",pi, fmt='%2d', delimiter=',', newline='\n')
     np.savetxt("trainYZ.txt",z, fmt='%2d', delimiter=',', newline='\n')
-    trainX = np.loadtxt("trainX.txt",delimiter=',')
-    trainYPi = np.loadtxt("trainYPi.txt",delimiter=',')
-    trainYZ = np.loadtxt("trainYZ.txt",delimiter=',')
+    trainX = np.loadtxt("trainX.txt",delimiter=',').astype(np.float32)
+    trainYPi = np.loadtxt("trainYPi.txt",delimiter=',').astype(np.float32)
+    trainYZ = np.loadtxt("trainYZ.txt",delimiter=',').astype(np.float32)
     brain.modelTrain(trainX,trainYPi,trainYZ)

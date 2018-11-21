@@ -63,7 +63,7 @@ class dNNTF():
         cost = tf.reduce_mean( tf.square(aZ-yZ) - tf.matmul(tf.transpose(yPi),tf.log(aPi)) )
         return cost
     
-    def modelTrain(self,trainX,trainYPi,trainYZ, lr = 0.0001, numEpochs = 1500, printCost=True):
+    def modelTrain(self,trainX,trainYPi,trainYZ, lr = 0.0001, numEpochs = 10000, printCost=True):
         ops.reset_default_graph()
         costs = []
         (_,m) = trainX.shape

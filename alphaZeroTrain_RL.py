@@ -6,7 +6,7 @@ import numpy as np
 
 board1DSize = 3
 gamesTrainBatch = 1
-totalBatches =3
+totalBatches =1
 #brain = cnNetwork(inputShape=(board1DSize,board1DSize,7),
 #                  outputSize=board1DSize*board1DSize+1)
 brain = dNNTF(board1DSize)

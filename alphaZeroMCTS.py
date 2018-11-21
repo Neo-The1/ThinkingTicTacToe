@@ -24,6 +24,13 @@ class alphaZeroMCTS:
         self._pi = [0]*self._board._boardSize
         self._v = 0
         self._p = [0]*self._board._boardSize
+    
+    def dirichletNoise(self, param, count):
+        """ random number generator fitting to dirichlet noise
+            https://en.wikipedia.org/wiki/Dirichlet_distribution
+         """
+        sample = [np.random.gamma(param, 1) for ii in range(count)]
+        return [v / sum(sample) for v in sample]
 
     def runSimulation(self):
         """ runs a monte carlo tree search simulation and updates search
@@ -54,13 +61,16 @@ class alphaZeroMCTS:
                 netPredict = self._network.predict(s)
                 self._p = netPredict[0][:,0]
                 self._v = netPredict[1][:,0][0]
-                
+                dnoise = self.dirichletNoise(0.03, len(legalMoves))
+                eps = 0.25
+                moveIndex = 0
                 for a in legalMoves:
                     self._N_sa[(simBoardState,a)]=0
                     self._Q_sa[(simBoardState,a)]=0
                     self._W_sa[(simBoardState,a)]=0
-                    self._P_sa[(simBoardState,a)]=self._p[a]
+                    self._P_sa[(simBoardState,a)]=(1 - eps)*self._p[a] + eps*dnoise[moveIndex]
                     visitedActions.add((simBoardState,a))
+                    moveIndex+=1
                 break
                 
             simulationBoard.makeMove(move)

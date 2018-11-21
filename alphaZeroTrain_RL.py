@@ -79,6 +79,7 @@ def playGame(brain,TotalGames):
         
 for ii in range(totalBatches):
     print(ii)
+    brain.loadWeights()
     inp,pi,z = playGame(brain,gamesTrainBatch)
     np.savetxt("trainX.txt",inp, fmt='%2d', delimiter=',', newline='\n')
     np.savetxt("trainYPi.txt",pi, fmt='%2d', delimiter=',', newline='\n')
@@ -86,4 +87,7 @@ for ii in range(totalBatches):
     trainX = np.loadtxt("trainX.txt",delimiter=',').astype(np.float32)
     trainYPi = np.loadtxt("trainYPi.txt",delimiter=',').astype(np.float32)
     trainYZ = np.loadtxt("trainYZ.txt",delimiter=',').astype(np.float32)
+    loadedShape = trainYZ.shape[0]
+    trainYZ = np.reshape(trainYZ,[1,loadedShape])
     brain.modelTrain(trainX,trainYPi,trainYZ)
+    brain.saveWeights()

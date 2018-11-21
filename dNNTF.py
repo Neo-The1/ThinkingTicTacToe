@@ -102,6 +102,19 @@ class dNNTF():
             p,v=sess.run(t)
         return p,v
     
+    def saveWeights(self):
+        init = tf.global_variables_initializer()
+        saver = tf.train.Saver()
+        with tf.Session() as sess:
+         sess.run(init)
+         saver.save(sess,'/tmp/model.ckpt')
+        
+    def loadWeights(self):
+        init = tf.global_variables_initializer()
+        saver = tf.train.Saver()
+        with tf.Session() as sess:
+         sess.run(init)
+         saver.restore(sess,'/tmp/model.ckpt')
 
 if __name__ == "__main__":
     from tttBoard import tttBoard
@@ -110,6 +123,7 @@ if __name__ == "__main__":
     states[:,0] = board.decodeState(board.getState())
     testNet = dNNTF(3)
     result = testNet.predict(states)
+    testNet.saveWeights()
     print(result)
     print("res0  ",result[0][:,0])
     print("res1  ",result[1][:,0][0])

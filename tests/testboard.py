@@ -2,8 +2,8 @@
 #------------------------------------------------------------------------------
 import sys
 sys.path.insert(0, '/home/nebula/code/ThinkingTicTacToe')
-from random import choice
 from tttBoard import tttBoard
+from movePolicy import randomMovePolicy
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -34,8 +34,9 @@ def testBoard(size):
 def testSelfPlay(size):
     print('Starting game on a ' + str(size) + ' x ' + str(size) + ' board')
     board = tttBoard(size)
-    while not board.isGameOver():
-        assert(board.makeMove(choice(board.legalMoves())))
+
+    movePolicy = randomMovePolicy()
+    board.selfPlay(movePolicy)
 
     board.display()
     if board.winner() == -1:

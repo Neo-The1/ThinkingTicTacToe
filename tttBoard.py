@@ -68,6 +68,13 @@ class tttBoard:
             return True
         return False
 
+    def selfPlay(self, movePolicy):
+        """ Starts playing on it's own from current position
+            using moves predicted by movePolicy
+        """
+        while not self.isGameOver():
+            assert(self.makeMove(movePolicy.getMove(self)))
+
     def getSize(self):
         return self._1Dsize
 
@@ -109,7 +116,7 @@ class tttBoard:
         movrow = int(movepos / self.getSize())
         movrowitems = self.fetchRowPrivate(movrow)
         if self.allNonZeroAndSamePrivate(movrowitems):
-            self._winner = movrowitems[0] -1
+            self._winner = movrowitems[0] - 1
             return
         movcol = int(movepos % self.getSize())
         movcolitems = self.fetchColPrivate(movcol)

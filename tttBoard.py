@@ -21,9 +21,10 @@ class tttBoard:
         self._boardSize = n * n
         self._1Dsize    = n
         self._winner    = -1
+        self._player    = 0
 
     def currPlayer(self):
-        return _player
+        return self._player
 
     def opponent(self, player):
         """ returns opponent of passed player
@@ -37,7 +38,7 @@ class tttBoard:
         boardString = ""
         for ii in range(self._boardSize):
             boardSq = self._board[ii]
-            if ii % self._1Dsize == 0:
+            if ii and ii % self._1Dsize == 0:
                 boardString += "\n"
             if boardSq == 1:
                 boardString += "O "
@@ -60,19 +61,21 @@ class tttBoard:
             make next move
         """
         assert(move < self._boardSize and self._board[move] == 0)
-        if not isGameOver():
+        if not self.isGameOver():
             self._board[move] = self.currPlayer() + 1
             self.checkWinPrivate(move)
             self._player ^= 1
+            return True
+        return False
 
     def getSize(self):
         return self._1Dsize
 
-    def isGameOver(self,evalBoard):
+    def isGameOver(self):
         """ check if a player occupies all of a row/col/diagonal or
             there are no more moves left for a player
         """
-       return self.winner() in [0, 1] or (self._board.count(0) == 0)
+        return self.winner() in [0, 1] or (self._board.count(0) == 0)
 
     def winner(self):
         """ see if there is a winner if game is over
@@ -87,30 +90,31 @@ class tttBoard:
     def fetchColPrivate(self, col):
         """ extract a col
         """
-        return [self._board[i] for i in range(self._boardSize) if i % getSize() == col]
+        return [self._board[i] for i in range(self._boardSize) if i % self.getSize() == col]
 
     def fetchDiagonalsPrivate(self):
         """ extract both diagonals
         """
-        return self._board[row * self.getSize() : (row + 1) * self.getSize()]
+        return [ [self._board[i*self.getSize()+i] for i in range(self.getSize())], \
+                 [self._board[(i + 1)*self.getSize() - i - 1] for i in range(self.getSize())] ]
 
     def allNonZeroAndSamePrivate(self, lst):
         """ checks if all entries in the passed list are same and non zero
         """
         return lst[1:] == lst[:-1] and lst[0]
 
-    def checkWin(self, movepos):
+    def checkWinPrivate(self, movepos):
         """ caches a player who won after a move at movepos was made
         """
         movrow = int(movepos / self.getSize())
         movrowitems = self.fetchRowPrivate(movrow)
-        if self.allNonZeroAndSamePrivate(moverowitems):
-            self._winner = moverowitems[0]
+        if self.allNonZeroAndSamePrivate(movrowitems):
+            self._winner = movrowitems[0] -1
             return
         movcol = int(movepos % self.getSize())
         movcolitems = self.fetchColPrivate(movcol)
-        if self.allNonZeroAndSamePrivate(movecolitems):
-            self._winner = movecolitems[0] - 1
+        if self.allNonZeroAndSamePrivate(movcolitems):
+            self._winner = movcolitems[0] - 1
             return
         if movrow == movcol:
             diagonals = self.fetchDiagonalsPrivate()
@@ -120,6 +124,4 @@ class tttBoard:
             if self.allNonZeroAndSamePrivate(diagonals[1]):
                 self._winner = diagonals[1][0] - 1
                 return
-
-        assert(self._winner int [-1, 0, 1])
 

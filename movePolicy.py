@@ -20,5 +20,5 @@ class randomMovePolicy(movePolicy):
 #------------------------------------------------------------------------------
 class nnMovePolicy(movePolicy):
 
-    def getMove(self, nn, board):
+    def getMove(self, board):
         pass

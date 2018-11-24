@@ -1,7 +1,12 @@
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
-import sys
-sys.path.insert(0, '/home/nebula/code/ThinkingTicTacToe')
+import os, sys
+rootDir = os.getcwd()
+rootDir = rootDir.split('/')
+rootDir.pop()
+rootDir = '/'.join(rootDir)
+
+sys.path.insert(0, rootDir)
 from tttBoard import tttBoard
 from movePolicy import randomMovePolicy
 

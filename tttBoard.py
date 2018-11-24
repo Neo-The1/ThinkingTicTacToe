@@ -1,50 +1,39 @@
-#tic tac toe board will be indexed in this convention:
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# tic tac toe board will be indexed in this convention:
 # left to right starting from 0. See example: 2x2 board 
-#0 1
-#2 3  
-#Player O is 1 and Player X is 2
-#history of moves is stored in a list as 'O2','X0' etc.
-#the state will be a nxn string made by joining the list
+# 0 1
+# 2 3
+# Players are 0 and 1
+# the state will be a nxn string made by joining the list
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 import numpy as np
 class tttBoard:
-
-    # Initialize the board, needs n to create nxn board
+    """ Initialize the board, needs n to create nxn board
+    """
     def __init__(self, n):
-        #board is a size nxn list containing 0,1 or 2 depending upon whether 
-        #it is empty, O or X respectively
-        self._board = [0]*n*n
-        self._state = "".join([str(p) for p in self._board])
-        #history contains the list of all moves
-        self._history = []
-        self._boardSize = n*n
-        self._1Dsize = n
-    
-    def decodeState(self,s):
-        state = np.zeros((1,self._boardSize))
-        for i in range(self._boardSize):
-            state[0,i] = s[i]
-        return state
+        """ board is a size nxn list containing 0, 1 or 2 depending upon whether
+            it is empty, O or X respectively
+        """
+        assert(n > 2)
+        self._board     = [0] * n * n
+        self._boardSize = n * n
+        self._1Dsize    = n
+        self._winner    = -1
 
     def currPlayer(self):
-        if len(self._history)==0:
-            #if fist move, currPlayer is 1 = O
-            return 1
-        if 'O' in self._history[-1] :
-            #if last move was made by O, current player is X
-            return 2 
-        else:
-            return 1
+        return _player
 
     def opponent(self, player):
-        """ returns opponent of passed player """
-        if player == 1:
-            return 2
-        if player == 2:
-            return 1
-        return None
+        """ returns opponent of passed player
+        """
+        assert(player == 0 or player == 1)
+        return (player ^ 1)
 
-    # Print the board
     def display(self):
+        """ Print the board
+        """
         boardString = ""
         for ii in range(self._boardSize):
             boardSq = self._board[ii]
@@ -55,98 +44,82 @@ class tttBoard:
             elif boardSq == 2 :
                 boardString += "X "
             else:
+                assert(boardSq == 0)
                 boardString += ". "
         print(boardString)
 
-    # Generate all possible moves from current board state
-    # A move is an integer position for Boardsq at which move is to be made
     def legalMoves(self):
-        legalmoves = []
-        for i in range(self._boardSize):
-            boardSq = self._board[i]
-            if boardSq == 0: #if position empty
-                legalmoves.append(i)
-        return legalmoves
+        """ Generate all possible moves from current board state
+            A move is an integer position for boardsq at which move is to be made
+        """
+        return [i for i in range(self._boardSize) if self._board[i] == 0]
 
-    # Make the passed move on the board for the side whose
-    # turn it is. After making the move update the side to
-    # make next move
     def makeMove(self, move):
-        self._board[move] = self.currPlayer()
-        if self.currPlayer() == 1:
-            self._history.append('O'+str(move))
-        else:
-            self._history.append('X'+str(move))
-        return self._state
+        """ Make the passed move on the board for the side whose
+            turn it is. After making the move update the side to
+            make next move
+        """
+        assert(move < self._boardSize and self._board[move] == 0)
+        if not isGameOver():
+            self._board[move] = self.currPlayer() + 1
+            self.checkWinPrivate(move)
+            self._player ^= 1
 
     def getSize(self):
         return self._1Dsize
 
-    def getState(self):
-        return "".join([str(p) for p in self._board])
+    def isGameOver(self,evalBoard):
+        """ check if a player occupies all of a row/col/diagonal or
+            there are no more moves left for a player
+        """
+       return self.winner() in [0, 1] or (self._board.count(0) == 0)
 
-    def getStateAfterMove(self, move):
-        boardcopy = self._board[:]
-        boardcopy[move] = self.currPlayer()
-        return "".join([str(p) for p in boardcopy])
-
-    #Check the winner by checking all rows, all columns and then 2 diagonals
-    # we will assume indexing of positons in board and corresponding in integer
-    #evalBoard is one player's board
-    #a n-bit integer with 0s at empty places and 1 at places occupied by player
-
-    def checkWin(self,evalBoard):
-        # function to check if a given bit in n-bit is 1 or not
-        def testBit(num, bitpos):
-            return ( num & ( 1 << bitpos ) )
-        #we set these values to be true and later and them with test bit for
-        #locations we need to check. If unoccupied, they will turn False
-        oneDBoardSize = self._1Dsize
-        winDiag1 = True
-        winDiag2 = True
-        #check diagonals first
-        for jj in range(oneDBoardSize):
-            winDiag1 = winDiag1 and testBit(evalBoard,jj*(oneDBoardSize+1))
-            winDiag2 = winDiag2 and testBit(evalBoard,(jj+1)*(oneDBoardSize-1))
-        if winDiag1 or winDiag2:
-            return True
-        #check rows and columns
-        for ii in range(oneDBoardSize):
-            winRow = True
-            winCol = True
-            startRow = ii*oneDBoardSize 
-            startCol = ii
-            row  = startRow
-            col =  startCol
-            for jj in range(oneDBoardSize):
-                #win will be set to False if testing pos is empty
-                #check rows
-                row = startRow+jj
-                winRow = winRow and testBit(evalBoard,row)
-                #check column
-                col = startCol + jj*oneDBoardSize
-                winCol = winCol and testBit(evalBoard,col)
-            if winRow or winCol:
-                return True
-        # if no win occured
-        return False
-
-    #To check winner, we create a n bit integer for each player with 0s at 
-    #empty places and 1s at places player occupies
     def winner(self):
-        Oboard = 0
-        Xboard = 0
-        for ii in range(self._boardSize):
-            if self._board[ii] == 1:
-                Oboard += 2**ii
-            if self._board[ii] == 2:
-                Xboard += 2**ii
-        winner = 0
-        if self.checkWin(Oboard):
-            winner = 1
-        elif self.checkWin(Xboard):
-            winner = 2
-        else:
-            if not self.legalMoves():
-                winner = -1
-        return winner
+        """ see if there is a winner if game is over
+        """
+        return self._winner
+
+    def fetchRowPrivate(self, row):
+        """ extract a row
+        """
+        return self._board[row * self.getSize() : (row + 1) * self.getSize()]
+
+    def fetchColPrivate(self, col):
+        """ extract a col
+        """
+        return [self._board[i] for i in range(self._boardSize) if i % getSize() == col]
+
+    def fetchDiagonalsPrivate(self):
+        """ extract both diagonals
+        """
+        return self._board[row * self.getSize() : (row + 1) * self.getSize()]
+
+    def allNonZeroAndSamePrivate(self, lst):
+        """ checks if all entries in the passed list are same and non zero
+        """
+        return lst[1:] == lst[:-1] and lst[0]
+
+    def checkWin(self, movepos):
+        """ caches a player who won after a move at movepos was made
+        """
+        movrow = int(movepos / self.getSize())
+        movrowitems = self.fetchRowPrivate(movrow)
+        if self.allNonZeroAndSamePrivate(moverowitems):
+            self._winner = moverowitems[0]
+            return
+        movcol = int(movepos % self.getSize())
+        movcolitems = self.fetchColPrivate(movcol)
+        if self.allNonZeroAndSamePrivate(movecolitems):
+            self._winner = movecolitems[0] - 1
+            return
+        if movrow == movcol:
+            diagonals = self.fetchDiagonalsPrivate()
+            if self.allNonZeroAndSamePrivate(diagonals[0]):
+                self._winner = diagonals[0][0] - 1
+                return
+            if self.allNonZeroAndSamePrivate(diagonals[1]):
+                self._winner = diagonals[1][0] - 1
+                return
+
+        assert(self._winner int [-1, 0, 1])
+

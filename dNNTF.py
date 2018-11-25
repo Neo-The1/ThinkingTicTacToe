@@ -53,24 +53,32 @@ class dNNTF():
         z2 = tf.add(tf.matmul(w2,a1),b2)
         a2 = tf.nn.relu(z2)
         zPi = tf.add(tf.matmul(wPi,a2),bPi)
-        aPi = tf.nn.softmax(zPi)
+        aPi = tf.nn.sigmoid(zPi)
         zZ = tf.add(tf.matmul(wZ,a2),bZ)
         aZ = tf.nn.tanh(zZ)
         
         return aPi,aZ
     
-    def computeCost(self,aPi,aZ,yPi,yZ):
-        cost = tf.reduce_mean( tf.square(aZ-yZ) - tf.matmul(tf.transpose(yPi),tf.log(aPi)) )
+    def computeCost(self,aPi,aZ,yPi,yZ,parameters):
+        eps = 1e-12 #to prevent log(0)
+        w1 = parameters['w1']
+        w2 = parameters['w2']
+        wPi = parameters['wPi']
+        wZ = parameters['wZ']
+        beta = 0.0001
+        regularizer = tf.nn.l2_loss(w1)+tf.nn.l2_loss(w2)+tf.nn.l2_loss(wPi)+tf.nn.l2_loss(wZ)
+        cost = tf.reduce_mean( 0.01*tf.square(aZ-yZ) - tf.matmul(tf.transpose(yPi),tf.log(aPi+eps)) 
+                + beta*regularizer)
         return cost
     
-    def modelTrain(self,trainX,trainYPi,trainYZ, lr = 0.0001, numEpochs = 10000, printCost=True):
+    def modelTrain(self,trainX,trainYPi,trainYZ, lr = 0.0001, numEpochs = 100000, printCost=True):
         ops.reset_default_graph()
         costs = []
         (_,m) = trainX.shape
         x,yPi,yZ = self.createPlaceholders()
         parameters = self.initializeParameters()
         aPi,aZ = self.fwdProp(x,parameters)
-        cost = self.computeCost(aPi,aZ,yPi,yZ)
+        cost = self.computeCost(aPi,aZ,yPi,yZ,parameters)
         optimizer = tf.train.AdamOptimizer(learning_rate=lr).minimize(cost)
         
         #initialize all variables
@@ -119,9 +127,10 @@ class dNNTF():
 if __name__ == "__main__":
     from tttBoard import tttBoard
     board = tttBoard(3)
-    states = np.zeros((19,2))
-    states[:,0] = board.decodeState(board.getState())
+    states = np.random.randn(19,1)
+#    states[:,0] = board.decodeState(board.getState())
     testNet = dNNTF(3)
+    print(states)
     result = testNet.predict(states)
     testNet.saveWeights()
     print(result)

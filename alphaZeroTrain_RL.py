@@ -1,14 +1,15 @@
-from alphaZeroMCTS import alphaZeroMCTS
+from alphaZeroMCTS_SL import alphaZeroMCTS
 from tttBoard import tttBoard
 #from convNeuralNetwork import cnNetwork
 from dNNTF import dNNTF
 import numpy as np
 
 board1DSize = 3
-gamesTrainBatch = 1
+gamesTrainBatch = 1000
 totalBatches =1
 #brain = cnNetwork(inputShape=(board1DSize,board1DSize,7),
 #                  outputSize=board1DSize*board1DSize+1)
+board = tttBoard(3)
 brain = dNNTF(board1DSize)
 def gameOver(board):
     if (board.winner()):
@@ -27,7 +28,7 @@ def playGame(brain,TotalGames):
     allPiLabels = []
     allZLabels = []
     while games < TotalGames:
-#        print(games)
+        print(games)
         playedMoves = {}
         board = tttBoard(board1DSize)
         nMoves = 0
@@ -41,7 +42,7 @@ def playGame(brain,TotalGames):
 #            print("pi ", pi)
             board.makeMove(np.argmax(pi))
 #            print("move ",np.argmax(pi))
-            board.display()
+#            board.display()
             nMoves += 1
             if gameOver(board):
                 games += 1
@@ -61,8 +62,7 @@ def playGame(brain,TotalGames):
 #        statesCNN = np.zeros((nMoves,board1DSize,board1DSize,7))
         for state in playedMoves:
             pi = playedMoves[state]
-            #define the training data structure here, 
-            
+            #define the training data structure here,           
 #            statesCNN[ind] = np.float32(board.decodeStateCNN(board._stateHistory))
             states[:,ind] = board.decodeState(state)
             piLabel[:,ind] = pi
@@ -72,14 +72,14 @@ def playGame(brain,TotalGames):
         allStates.append(states)
         allPiLabels.append(piLabel)
         allZLabels.append(ZLabel)
-    allStates = np.concatenate(allStates)
-    allPiLabels = np.concatenate(allPiLabels)
-    allZLabels = np.concatenate(allZLabels)
+    allStates = np.concatenate(allStates,axis=1)
+    allPiLabels = np.concatenate(allPiLabels,axis=1)
+    allZLabels = np.concatenate(allZLabels,axis=1)
     return allStates, allPiLabels, allZLabels
         
 for ii in range(totalBatches):
     print(ii)
-    brain.loadWeights()
+#    brain.loadWeights()
     inp,pi,z = playGame(brain,gamesTrainBatch)
     np.savetxt("trainX.txt",inp, fmt='%2d', delimiter=',', newline='\n')
     np.savetxt("trainYPi.txt",pi, fmt='%2d', delimiter=',', newline='\n')

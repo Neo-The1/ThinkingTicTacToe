@@ -1,13 +1,14 @@
 #code to play with AI
 import numpy as np
 from tttBoard import tttBoard
+from dNNTF import dNNTF
 board1DSize = 3
 #from convNeuralNetwork import cnNetwork
 #alphaZero = cnNetwork(inputShape=(board1DSize,board1DSize,7),
 #                  outputSize=board1DSize*board1DSize+1)
 from deepNeuralNetwork import dnNetwork
-alphaZero = dnNetwork(2*board1DSize*board1DSize+1,board1DSize*board1DSize+1)
-alphaZero.loadModel()
+alphaZero = dNNTF(board1DSize)
+alphaZero.loadWeights()
 board = tttBoard(board1DSize)
 board.display()
 def gameOver(board):
@@ -33,8 +34,10 @@ while len(board.legalMoves()) > 0 and not(gameOver(board)):
         break
     print('Thinking...')
 #    alphaZeroPredict = alphaZero.predict(board.decodeStateCNN(board._stateHistory))
-    alphaZeroPredict = alphaZero.predict(board.decodeState(board.getState()))
-    alphaZeroMovesProbs = alphaZeroPredict[0].flatten()
+    s = np.zeros((19,1))
+    s[:,0] = board.decodeState(board.getState())
+    alphaZeroPredict = alphaZero.predict(s)
+    alphaZeroMovesProbs = alphaZeroPredict[0][:,0]
     print(alphaZeroMovesProbs)
     board.makeMove(np.argmax(alphaZeroMovesProbs))
 #    print('Thinking Tic Tac Toe move...'+str(alphaZeroMove))

@@ -19,7 +19,7 @@ class alphaZeroMCTS:
         self._board = board
         self._network = network
         self._maxMoves = 10
-        self._maxGameSim =5
+        self._maxGameSim =50
         self._ucbK = 1.4
         self._pi = [0]*self._board._boardSize
         self._v = 0
@@ -58,6 +58,7 @@ class alphaZeroMCTS:
                 visitedActions.add((simBoardState,move))
             else:
                 s = np.zeros((2*self._board._1Dsize**2+1,1))
+                s[:,0] = self._board.decodeState(simBoardState)
                 netPredict = self._network.predict(s)
                 self._p = netPredict[0][:,0]
                 self._v = netPredict[1][:,0][0]
@@ -84,6 +85,7 @@ class alphaZeroMCTS:
                 continue
             self._N_sa[(simBoardState, move)] += 1
             self._W_sa[(simBoardState,move)] += self._v
+#            print(self._v)
             self._Q_sa[(simBoardState, move)] = self._W_sa[(simBoardState,move)]/self._N_sa[(simBoardState,move)]
 
     def getMCTSMoveProbs(self,tau=0):
@@ -102,13 +104,13 @@ class alphaZeroMCTS:
             games+=1
         prob, move = max((self._Q_sa[(boardState,a)], a) for a in legalMoves)
         self._pi[move] = 1
+        self.printStats(boardState,legalMoves)
         return self._pi
 
-    def printStats(self,dicStats,dicN,state,statesMoves):
-        for x in sorted(((100*dicStats.get((state,a),0)/
-                          dicN.get((state,a),1),
-                          dicStats.get((state,a),0),
-                          dicN.get((state,a),0),a)
-                            for s,a in statesMoves),
+    def printStats(self,state,legalMoves):
+        for x in sorted(((self._Q_sa[(state,a)],
+                          self._W_sa[(state,a)],
+                          self._N_sa[(state,a)],a)
+                            for a in legalMoves),
                             reverse=True) :
-            print("{3}:{0:.2f}%({1}/{2})".format(*x))
+            print("{3}: Q {0:.2f} W {1:.2f} N {2}".format(*x))

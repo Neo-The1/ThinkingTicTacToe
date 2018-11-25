@@ -23,6 +23,9 @@ class tttBoard:
         self._winner    = -1
         self._player    = 0
 
+    def __hash__(self):
+        return hash(str(self._player).join([str(cell) for cell in self._board]))
+
     def currPlayer(self):
         return self._player
 

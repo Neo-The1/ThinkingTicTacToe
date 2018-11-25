@@ -56,7 +56,36 @@ def testSelfPlay(size):
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
+def testHash(size):
+    board = tttBoard(size)
+
+    hashlist = []
+    movePolicy = randomMovePolicy()
+    while not board.isGameOver():
+        hashlist.append(board.__hash__())
+        assert(board.makeMove(movePolicy.getMove(board)))
+
+    return len(hashlist) == len(set(hashlist))
+
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+def testHashPerf(size):
+    board = tttBoard(size)
+    board.__hash__()
+
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 if __name__ == '__main__':
-    if testBoard(3) and testBoard(4) and testBoard(5) and\
+    print("Running sanity tests")
+    if testBoard(3)    and testBoard(4)    and testBoard(5)   and\
+       testHash(3)     and testHash(4)     and testHash(5)    and\
        testSelfPlay(3) and testSelfPlay(4) and testSelfPlay(5):
         print('All passed')
+
+    import timeit
+    numIterations = 1000000
+    print("Running performance tests")
+    print("Time spent hashing 5 x 5 board 1000000 times")
+    print(timeit.timeit("testHashPerf(5)", setup="from __main__ import testHashPerf", number = numIterations))
+
+

@@ -1,7 +1,7 @@
 from tttBoard import tttBoard
 from alphaZeroMCTS_SL import alphaZeroMCTS
-from convNeuralNetwork import cnNetwork
-
+from dNNTF import dNNTF
+import numpy as np
 def gameOver(board):
     if (board.winner()):
         if(board.winner()==1):
@@ -14,8 +14,7 @@ def gameOver(board):
         return 0
 
 board1DSize = 3
-brain = cnNetwork(inputShape=(board1DSize,board1DSize,7),
-                  outputSize=board1DSize*board1DSize+1)
+brain = dNNTF(board1DSize)
 
 
 board = tttBoard(board1DSize)
@@ -50,8 +49,13 @@ while not gameOver(board):
     alphaZeroTTT.printStats(alphaZeroTTT._W_sa,alphaZeroTTT._N_sa,boardState,statesMoves)
     print("loss stats")
     alphaZeroTTT.printStats(alphaZeroTTT._L_sa,alphaZeroTTT._N_sa,boardState,statesMoves)
+#    print("Q stats")
+#    alphaZeroTTT.printStats(alphaZeroTTT._Q_sa,alphaZeroTTT._N_sa,boardState,statesMoves)
     s = board.getState()
-    prob, move = max(((alphaZeroTTT._W_sa[(s,a)]-alphaZeroTTT._L_sa[(s,a)])/alphaZeroTTT._N_sa[(s,a)], a) for a in board.legalMoves())
+    prob = alphaZeroTTT.getMCTSMoveProbs()
+    move = np.argmax(prob)
+    print(prob)
+    print(move)
     assert(move in board.legalMoves())
     board.makeMove(move)
     board.display()

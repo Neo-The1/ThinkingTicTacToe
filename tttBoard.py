@@ -15,7 +15,8 @@ class tttBoard:
         self._board = [0]*n*n
         self._state = "".join([str(p) for p in self._board])
         #history contains the list of all moves
-        self._history = []
+        self._stateHistory = []
+        self._moveHistory = []
         self._boardSize = n*n
         self._1Dsize = n
     
@@ -25,15 +26,87 @@ class tttBoard:
             state[0,i] = s[i]
         return state
 
+    def decodeState(self, s):
+        """ takes state list of array boardSize and returns
+            a list of length 2*boardSize + 1 elements
+            first boardSize represent O's position
+            second boardSize represent X's position
+            last element is player to make next move
+        """
+        state = np.float32(np.zeros((2 * self._boardSize + 1)))
+        numOccupiedSq = 0;
+        for i in range(self._boardSize):
+            if s[i] == '1':
+                state[i] = 1
+                numOccupiedSq += 1;
+            elif s[i] == '2':
+                state[self._boardSize+i] = 1
+                numOccupiedSq += 1;
+        # every even's turn is O's move
+        if numOccupiedSq % 2 == 0:
+            state[-1] = 1
+        else:
+            state[-1] = 2
+        return state
+    
+    def decodeStateCNN(self, h):
+        """ takes hisory, where each element is a state and returns
+            a 3D array: 1DboardSize*1DboardSize*7
+            data is of format (O{t},O{t-1},O{t-2},X{t},X{t-1},X{t-2},C)
+            Where O{s} and X{s} represent 1DboardSize*1DboardSize arrays representing 
+            there postions as 1 for occupied and 0 for unoccupied at time s
+            C is constant 1DboardSize*1DboardSize array, 1 for O and 0 for X 
+
+            Third layer contains 
+        """
+        oneDsize = self._1Dsize
+        state = np.zeros((1,oneDsize,oneDsize,7))        
+        hist = list(range(3))
+        numMoves = min(len(h),3)
+        if numMoves <= 3:
+            for k in range(numMoves):
+                hist[k] = h[-1*k-1]
+                
+        for k in range(numMoves,3):
+            hist[k] = '000000000'
+        for n in range(3):
+            s = hist[n]
+            for i in range(self._boardSize):
+                row,col = np.divmod(i,oneDsize)
+                if s[i] == '1':
+                    state[0,row,col,n] = 1
+                elif s[i] == '2':
+                    state[0,row,col,n+3] = 1                
+        
+        if self.currPlayer() == 1:
+            state[0,:,:,6] = 1
+        else:
+            state[0,:,:,6] = 0
+        return state
+
     def currPlayer(self):
-        if len(self._history)==0:
+        if len(self._moveHistory)==0:
             #if fist move, currPlayer is 1 = O
             return 1
-        if 'O' in self._history[-1] :
+        if 'O' in self._moveHistory[-1] :
             #if last move was made by O, current player is X
             return 2 
         else:
             return 1
+
+    def stateToPlayer(self,state):
+        numX = 0
+        numO=0
+        for i in range(self._boardSize):
+            if state[i]=='1':
+                numO += 1
+            if state[i]=='2':
+                numX +=1
+        if numX==numO:
+            return 1 #O's turn
+        if numX<numO:
+            return 2 #X's turn
+        return None 
 
     def opponent(self, player):
         """ returns opponent of passed player """
@@ -72,19 +145,30 @@ class tttBoard:
     # turn it is. After making the move update the side to
     # make next move
     def makeMove(self, move):
+        assert( move in self.legalMoves())
         self._board[move] = self.currPlayer()
+        self._stateHistory.append(self.getState())
         if self.currPlayer() == 1:
-            self._history.append('O'+str(move))
+            self._moveHistory.append('O'+str(move))
         else:
-            self._history.append('X'+str(move))
-        return self._state
+            self._moveHistory.append('X'+str(move))
+        return self._board
+
+
+    def playerAt(self, cell):
+        """ returns id of player occupying cell
+        """
+        assert(cell >= 0 and cell < self.getSize() * self.getSize())
+        return self._board[cell]
+
 
     def getSize(self):
         return self._1Dsize
 
     def getState(self):
         return "".join([str(p) for p in self._board])
-
+    
+    
     def getStateAfterMove(self, move):
         boardcopy = self._board[:]
         boardcopy[move] = self.currPlayer()

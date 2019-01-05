@@ -2,32 +2,36 @@
 # -----------------------------------------------------------------------------
 import copy
 import numpy as np
+from random import choice
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 class alphaZeroMCTS:
     """ alpha zero monte carlo tree search algorithm. Refer to alpha zero paper
         for notations. Variables directly corresponds to the notation in paper
-        s : used for board
-        a : used for a move
+        s : used for current board position
+        a : used for move a from position s
      """
     def __init__(self,board, network, *kargs, **kwds):
-        self._P_sa = {}
         self._N_sa = {}
-        self._Q_sa = {}
         self._W_sa = {}
+        self._Q_sa = {}
+        self._P_sa = {}
         self._board = board
-        self._pi = [0]*self._board._boardSize
-        self._z = None
         self._network = network
-        self._maxMoves = 1000
-        
-    def ucb(self, s, a):
-        """ returns upper confidence bound for choosing move a from board
-            position s
-        """
-        K = 1.0
-        return self._Q_sa[(s, a)] + K * self._P[(s, a)] / ( 1.0 + self._N_sa[(s, a)] )
+        self._maxMoves = 10
+        self._maxGameSim =50
+        self._ucbK = 1.4
+        self._pi = [0]*self._board._boardSize
+        self._v = 0
+        self._p = [0]*self._board._boardSize
     
+    def dirichletNoise(self, param, count):
+        """ random number generator fitting to dirichlet noise
+            https://en.wikipedia.org/wiki/Dirichlet_distribution
+         """
+        sample = [np.random.gamma(param, 1) for ii in range(count)]
+        return [v / sum(sample) for v in sample]
+
     def runSimulation(self):
         """ runs a monte carlo tree search simulation and updates search
             statistics
@@ -36,44 +40,54 @@ class alphaZeroMCTS:
         # should run this simulation on a copy so as not to corrupt the actual
         # board by making moves on it
         simulationBoard = copy.deepcopy(self._board)
-        s = simulationBoard.getState()
-        nodeExpanded = False
+        simBoardState = simulationBoard.getState()
+        Q,N = self._Q_sa,self._N_sa
 
         for t in range(self._maxMoves):
             legalMoves = simulationBoard.legalMoves()
             #stop if no legal moves
             if len(legalMoves) == 0:
                 break
-            # if stats exist for all legal moves
-            # use the UCB formula
-            if all(self._N_sa.get((s, a)) for a in legalMoves):
-                ucbValue, move= max((self.ucb(s, a), a) for a in legalMoves)
-                visitedActions.add((s, move))
-                simulationBoard.makeMove(move)
-                winner = simulationBoard.winner()
-                s = simulationBoard.getState()
-                if winner:
-                    break
-            # use neural network to predict this leaf node
-            # networkPredict is a list of probabilities of making a move on each square
-            # of the board and a last entry {-1, 0, 1} to estimate winner
+            # check if node has been expanded
+            if  all(N.get((simBoardState,a)) for a in legalMoves):
+                 #use the UCB formula
+                Ntotal = sum(filter(None,(N.get((simBoardState, a)) for a in legalMoves)))
+                logNtotal = np.log(Ntotal)
+                ucbVal, move= max( ( Q[(simBoardState,a)]
+                + self._ucbK*np.sqrt(logNtotal/N[(simBoardState,a)]),a) for a in legalMoves)
+                visitedActions.add((simBoardState,move))
             else:
-                networkPredict = self._network.predict(self._board.decodeState(s)).flatten()
-                nodeExpanded = True
+                s = np.zeros((2*self._board._1Dsize**2+1,1))
+                s[:,0] = self._board.decodeState(simBoardState)
+                netPredict = self._network.predict(s)
+                self._p = netPredict[0][:,0]
+                self._v = netPredict[1][:,0][0]
+                dnoise = self.dirichletNoise(0.03, len(legalMoves))
+                eps = 0.25
+                moveIndex = 0
+                for a in legalMoves:
+                    self._N_sa[(simBoardState,a)]=0
+                    self._Q_sa[(simBoardState,a)]=0
+                    self._W_sa[(simBoardState,a)]=0
+                    self._P_sa[(simBoardState,a)]=(1 - eps)*self._p[a] + eps*dnoise[moveIndex]
+                    visitedActions.add((simBoardState,a))
+                    moveIndex+=1
                 break
-        # Update the statistics for this simulation
-        if  nodeExpanded:
-            for move in legalMoves:
-                self._N_sa[(s,move)] = 0
-                self._Q_sa[(s,move)] = 0
-                self._W_sa[(s,move)] = 0
-                self._P_sa[(s, move)] = networkPredict[move]
+                
+            simulationBoard.makeMove(move)
+            simBoardState  = simulationBoard.getState()
+            winner = simulationBoard.winner()
+            if winner:
+                break
 
-        for s, move in visitedActions:
-            self._N_sa[(s, move)] += 1
-            self._W_sa[(s, move)] +=networkPredict[-1] #winner is last entry in network output
-            self._Q_sa[(s, move)] = self._W_sa[(s, move)]/self._N_sa[(s, move)]
-            
+        for simBoardState, move in visitedActions:
+            if (simBoardState,move) not in self._N_sa:
+                continue
+            self._N_sa[(simBoardState, move)] += 1
+            self._W_sa[(simBoardState,move)] += self._v
+#            print(self._v)
+            self._Q_sa[(simBoardState, move)] = self._W_sa[(simBoardState,move)]/self._N_sa[(simBoardState,move)]
+
     def getMCTSMoveProbs(self,tau=0):
         """ returns  the vector pi of move probability at each move
             and scalar winner z
@@ -81,34 +95,22 @@ class alphaZeroMCTS:
             or whether a proportional probability is returned (tau = 1)
         """
         legalMoves = self._board.legalMoves()
-        s = self._board.getState()
+        boardState = self._board.getState()
         # no need to run simulation if there are no real choices
         # so return accordingly
         games = 0
-        while games < 5000:
+        while games < self._maxGameSim:
             self.runSimulation()
             games+=1
-            #define new empty list
-        eps = 0.25
-        #define new empty list
-        newPi = [0]*self._board._boardSize
-        for ii in range(self._board._boardSize):
-            if ii in legalMoves:
-                newPi[ii] = (1-eps)*self._P_sa[(s,ii)] + eps*np.random.rand()
-        #normalize pi is tau = 1, convert it to one hot if tau = 0
-        N = np.sum(newPi) #total N, needed to normalize
-        if tau == 1:
-            newPi = np.divide(newPi,N)
-            self._pi = newPi.copy()
-        if tau == 0:
-            newOneHotPi = [0]*self._board._boardSize
-            newOneHotPi[(np.argmax(newPi))] = 1
-            self._pi = newOneHotPi.copy()
-        if len(self._pi) == self._board._boardSize:
-            return self._pi
-        else:
-            randPi = np.random.randn(9)
-            newOneHotPi[np.argmax(randPi)]=1
-            self._pi = newOneHotPi.copy()
-            print(newOneHotPi)
-            return self._pi
+        prob, move = max((self._Q_sa[(boardState,a)], a) for a in legalMoves)
+        self._pi[move] = 1
+        self.printStats(boardState,legalMoves)
+        return self._pi
+
+    def printStats(self,state,legalMoves):
+        for x in sorted(((self._Q_sa[(state,a)],
+                          self._W_sa[(state,a)],
+                          self._N_sa[(state,a)],a)
+                            for a in legalMoves),
+                            reverse=True) :
+print("{3}: Q {0:.2f} W {1:.2f} N {2}".format(*x))

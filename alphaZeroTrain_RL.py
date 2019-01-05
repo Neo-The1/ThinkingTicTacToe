@@ -1,7 +1,7 @@
 from alphaZeroMCTS_SL import alphaZeroMCTS
 from tttBoard import tttBoard
 #from convNeuralNetwork import cnNetwork
-from dNNTF import dNNTF
+from deepNeuralNetwork import dnNetwork
 import numpy as np
 
 board1DSize = 3
@@ -10,7 +10,7 @@ totalBatches =1
 #brain = cnNetwork(inputShape=(board1DSize,board1DSize,7),
 #                  outputSize=board1DSize*board1DSize+1)
 board = tttBoard(3)
-brain = dNNTF(board1DSize)
+brain = dnNetwork(2*board1DSize*board1DSize+1,board1DSize*board1DSize+1)
 def gameOver(board):
     if (board.winner()):
         if(board.winner()==1):
@@ -32,7 +32,7 @@ def playGame(brain,TotalGames):
         playedMoves = {}
         board = tttBoard(board1DSize)
         nMoves = 0
-        #brain.loadModel()
+#        brain.loadModel()
         while len(board.legalMoves()) > 0:
             state = board.getState()
 #            print("state ",state)
@@ -89,5 +89,6 @@ for ii in range(totalBatches):
     trainYZ = np.loadtxt("trainYZ.txt",delimiter=',').astype(np.float32)
     loadedShape = trainYZ.shape[0]
     trainYZ = np.reshape(trainYZ,[1,loadedShape])
-    brain.modelTrain(trainX,trainYPi,trainYZ)
-    brain.saveWeights()
+#    trainY = np.concatenate((trainYPi,trainYZ))
+    brain.train(trainX.T,trainYPi.T)
+    brain.saveModel()

@@ -53,7 +53,7 @@ class dNNTF():
         z2 = tf.add(tf.matmul(w2,a1),b2)
         a2 = tf.nn.relu(z2)
         zPi = tf.add(tf.matmul(wPi,a2),bPi)
-        aPi = tf.nn.sigmoid(zPi)
+        aPi = tf.nn.softmax(zPi,axis=0)
         zZ = tf.add(tf.matmul(wZ,a2),bZ)
         aZ = tf.nn.tanh(zZ)
         
@@ -67,11 +67,23 @@ class dNNTF():
         wZ = parameters['wZ']
         beta = 0.0001
         regularizer = tf.nn.l2_loss(w1)+tf.nn.l2_loss(w2)+tf.nn.l2_loss(wPi)+tf.nn.l2_loss(wZ)
-        cost = tf.reduce_mean( 0.01*tf.square(aZ-yZ) - tf.matmul(tf.transpose(yPi),tf.log(aPi+eps)) 
-                + beta*regularizer)
+#        cost = tf.reduce_mean( 0.01*tf.square(aZ-yZ) - tf.matmul(tf.transpose(yPi),tf.log(aPi+eps)) 
+#                + beta*regularizer)
+        cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=tf.transpose(aPi),labels=tf.transpose(yPi)))
         return cost
     
-    def modelTrain(self,trainX,trainYPi,trainYZ, lr = 0.0001, numEpochs = 100000, printCost=True):
+    def train(self,trainX,trainYPi,trainYZ, lr = 0.0001, numEpochs = 100000, printCost=True):
+        if numEpochs<200:
+            lr = 0.1
+        elif numEpochs<400:
+            lr = 0.01
+        elif numEpochs<600:
+            lr = 0.001
+        elif numEpochs<700:
+            lr = 0.0001
+        else:
+            lr = 0.00001
+                
         ops.reset_default_graph()
         costs = []
         (_,m) = trainX.shape
@@ -79,7 +91,7 @@ class dNNTF():
         parameters = self.initializeParameters()
         aPi,aZ = self.fwdProp(x,parameters)
         cost = self.computeCost(aPi,aZ,yPi,yZ,parameters)
-        optimizer = tf.train.AdamOptimizer(learning_rate=lr).minimize(cost)
+        optimizer = tf.train.AdamOptimizer(learning_rate=lr,beta1=0.9).minimize(cost)
         
         #initialize all variables
         init = tf.global_variables_initializer()
@@ -110,14 +122,14 @@ class dNNTF():
             p,v=sess.run(t)
         return p,v
     
-    def saveWeights(self):
+    def saveModel(self):
         init = tf.global_variables_initializer()
         saver = tf.train.Saver()
         with tf.Session() as sess:
          sess.run(init)
          saver.save(sess,'/tmp/model.ckpt')
         
-    def loadWeights(self):
+    def loadModel(self):
         init = tf.global_variables_initializer()
         saver = tf.train.Saver()
         with tf.Session() as sess:
@@ -134,7 +146,7 @@ if __name__ == "__main__":
     result = testNet.predict(states)
     testNet.saveWeights()
     print(result)
-    print("res0  ",result[0][:,0])
-    print("res1  ",result[1][:,0][0])
+#    print("res0  ",result[0][:,0])
+#    print("res1  ",result[1][:,0][0])
                     
                 
